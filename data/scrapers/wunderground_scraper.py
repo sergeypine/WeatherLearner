@@ -6,16 +6,20 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
 import sys
+import csv
+from selenium.webdriver.chrome.options import Options
 
 
 #=====================================================================================
-PAGE_LOAD_RETRIES = 10
+PAGE_LOAD_RETRIES = 4
 
 
 #=====================================================================================
 #URL example: https://www.wunderground.com/history/daily/KMDW/date/2015-1-21
 
-_driver = webdriver.Chrome(executable_path="/home/snumerov/ucsd/WeatherLearner/data/scrapers/chromedriver")
+chrome_options = Options()
+chrome_options.headless = True
+_driver = webdriver.Chrome(executable_path="/home/snumerov/ucsd/WeatherLearner/data/scrapers/chromedriver",   chrome_options=chrome_options)
 def getHtmlForDate(date, stationCode):
 	target_url = 'https://www.wunderground.com/history/daily/{}/date/{}'.format(stationCode, date)
 	
@@ -25,6 +29,7 @@ def getHtmlForDate(date, stationCode):
 	while attempts < PAGE_LOAD_RETRIES:
 		try:
 			_driver.get(target_url)
+			time.sleep(2) #blegh...
 
 			soup = BeautifulSoup(_driver.page_source, 'lxml')
 			tableHtml = soup.find_all('table')[1]
@@ -55,19 +60,15 @@ def getHourlyDataForDateFromHtml(pageHtml, date):
 		for index, row in df.iterrows():
 			hourly_data_list.append([
 				row['Time'], 
-				row['Temperature'],
-				row['Dew Point'],
-				row['Humidity'],
-				row['Wind'],
-				row['Wind Speed'],
-				row['Wind Gust'],
-				row['Pressure'],
-				row['Precip.'],
-				row['Condition']])
-
-
-		print(hourly_data_list)
-
+				row['Temperature'].replace("\xa0", " "),
+				row['Dew Point'].replace("\xa0", " "),
+				row['Humidity'].replace("\xa0", " "),
+				row['Wind'].replace("\xa0", " "),
+				row['Wind Speed'].replace("\xa0", " "),
+				row['Wind Gust'].replace("\xa0", " "),
+				row['Pressure'].replace("\xa0", " "),
+				row['Precip.'].replace("\xa0", " "),
+				row['Condition'].replace("\xa0", " ")])
 	except:
 		print("Unexpected error parsing page HTML:", sys.exc_info()[0], sys.exc_info()[1])
 		return []
@@ -76,7 +77,12 @@ def getHourlyDataForDateFromHtml(pageHtml, date):
 
 #=====================================================================================
 def saveHourlyDataCsv(hourlyData, csvFile):
-	pass
+	fields = ['Time', 'Temp', 'DewPoint', 'Humidity', 'Wind', 'WindSpeed', 'WindGust', 'Pressure', 'Precip', 'Condition']
+
+	with open(csvFile, "w") as f:
+		write = csv.writer(f)
+		write.writerow(fields)
+		write.writerows(hourlyData)
 
 #=====================================================================================
 def getNextDayDate(todayDate):
@@ -114,12 +120,11 @@ def mainFunc(startYear, yearCount, stationCode, locationName):
 			present_date, int(time.time() - start_time), len(data), dates_success, dates_failure))
 		present_date = getNextDayDate(present_date)
 
-
 	output_file_name = "{}_{}-{}.csv".format(locationName, startYear, startYear + yearCount - 1)
 	saveHourlyDataCsv(all_hourly_data, output_file_name)
 	print("Successfully saved {} records to file {}".format(len(all_hourly_data), output_file_name))
 
 #=====================================================================================
 
-mainFunc(2010, 3, 'KDSM', 'Des_Moines')
+mainFunc(2011, 10, 'KORD', 'Chicago')
 
