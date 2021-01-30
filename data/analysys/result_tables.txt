@@ -6,25 +6,30 @@ Results of Initial Experimentation with Weather Prediction models
 NOTES:
 
 - Learn from hourly data for multiple cities, 03/20/2014-01/01/2021
-- Sliding Window Approach with varying lookbacks and prediction intervals(how far in advance)
-- Predicting 4 characteristis for a given hour:
-	- Whether no clouds (is_clear)
 
+- Sliding Window Approach with varying lookbacks and prediction intervals(how far in advance)
+
+- Predicting 4 characteristis for a **given hour**:
+	- Whether no clouds (is_clear)
 	- Whether there will be precipitation (is_precip)
-	
 	- Wind Speed
+	- Temperature
+
+
 	
-- Features used (Note Sin and Cos for Day of Year and Hour of Day to capture time being circular):
+- Features used (NOTE, using Sin() and Cos() for Day of Year and Hour of Day to capture time being circular):
 			['Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'day_of_year_sin', 'day_of_year_cos', 'hour_of_day_sin', 'hour_of_day_cos', 'Pressure', 'Humidity', 'DewPoint', 
 			'is_clear', 'is_partly_cloudy', 'is_fog', 'is_precip', 'is_heavy_precip', 'is_light_precip', 'is_tstorm']
 
+- About 40,000 Observations and 400-1400 features (depending of number of neighboring locations and lookback window length)
+
 - Recording F2 (is_precip, is_clear) or R2 (WindSpeed, Temp) scores
 
-- Using 25%/55% Test/Training Split
+- Using 25%/75% Test/Training Split
 
-- Neural Network with 2 hidden layers of size 0.8 * TOTAL_FEATURE_CNT and 0.4 * TOTAL_FEATURE_CNT
+- Neural Network with 2 hidden layers of sizes 0.8 * TOTAL_FEATURE_CNT and 0.4 * TOTAL_FEATURE_CNT
 
-- Note that Temp is predicted very well so the focus on the remaining 3
+- NOTE that Temp is predicted very well so the focus is on the remaining 3
 
 *****************************************************
 *****************************************************
@@ -98,7 +103,7 @@ predict interval
 48h			78		85		
 72h			85		89
 
-PREDICTIONS FOR MULTIPLE LOCATIONS FOR THE "Weather moves from West to East" THEORY (Cleaveland)
+MULTIPLE LOCATIONS FOR THE "Weather moves from West to East" THEORY (Cleaveland)
 ['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv',  '../FortWayne_2011-2020_CLEANED.csv', '../Milwaukee_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv',
 '../Madison_2011-2020_CLEANED.csv',  '../GrandRapids_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', '../Toledo_2011-2020_CLEANED.csv', '../Columbus_2011-2020_CLEANED.csv',
 '../KansasCity_2011-2020_CLEANED.csv', '../Minneapolis_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', '../Saginaw_2011-2020_CLEANED.csv'],
