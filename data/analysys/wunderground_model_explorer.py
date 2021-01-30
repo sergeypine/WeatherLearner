@@ -16,7 +16,7 @@ pd.set_option('display.max_rows', 250)
 def exploreModel(targetLocationFile, adjacentLocationFiles, predictionHoursAhead, lookBackHours, predictedVariable, dependentVariables, isClassification):
 	
 	#(1) Merge the datasets
-	merged_df = createMergedDataframe(targetLocationFile, adjacentLocationFiles)[22000:]
+	merged_df = createMergedDataframe(targetLocationFile, adjacentLocationFiles)
 
 	#(2) Build the featureset (NOTE: this takes forever, begging for optimization)
 	featureset = buildFeatureSet(merged_df, predictionHoursAhead, lookBackHours, dependentVariables, predictedVariable, len(adjacentLocationFiles))
@@ -29,22 +29,21 @@ def exploreModel(targetLocationFile, adjacentLocationFiles, predictionHoursAhead
 	scaler = StandardScaler() 
 	X = scaler.fit_transform(X)
 
-	X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
-
+	X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25, random_state=42)
 	
 	if isClassification:
-		regressor = MLPClassifier(hidden_layer_sizes = [int(len(featureset.columns) * .67), int(len(featureset.columns) * .1)])
+		regressor = MLPClassifier(hidden_layer_sizes = [int(len(featureset.columns) * .8), int(len(featureset.columns) * .4)])
 		regressor.fit(X_train, Y_train.values.ravel())
 		Y_predict = regressor.predict(X_test)
 		score = f1_score(Y_test, Y_predict)
-		print("Model Score for VAR = {} is {}".format(predictedVariable, score))
+		print("Model Score for VAR = {} Is {} for prediction interval = {}h and for lookback window = {}h".format(predictedVariable, score, predictionHoursAhead, lookBackHours))
 
 	else:
-		regressor = MLPRegressor(hidden_layer_sizes = [int(len(featureset.columns) * .67), int(len(featureset.columns) * .1)])
+		regressor = MLPRegressor(hidden_layer_sizes = [int(len(featureset.columns) * .8), int(len(featureset.columns) * .4)])
 		regressor.fit(X_train, Y_train.values.ravel())
 		Y_predict = regressor.predict(X_test)
 		score = r2_score(Y_test, Y_predict)	
-		print("Model Score for VAR = {} Is {}".format(predictedVariable, score))
+		print("Model Score for VAR = {} Is {} for prediction interval = {}h and for lookback window = {}h".format(predictedVariable, score, predictionHoursAhead, lookBackHours))
 	
 #=====================================================================
 def createMergedDataframe(targetLocationFile, adjacentLocationFiles):
@@ -128,15 +127,22 @@ def buildFeatureRow(mergedDf, predictionTs, predictionHoursAhead, lookBackHours,
 			
 	return row_dict
 #=====================================================================
-exploreModel('../Chicago_2011-2020_CLEANED.csv', 
-	['../Madison_2011-2020_CLEANED.csv', '../GrandRapids_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv',
-	 '../Indianapolis_2011-2020_CLEANED.csv', '../Cincinatti_2011-2020_CLEANED.csv', '../Toronto_2011-2020_CLEANED.csv', '../StLouis_2011-2020_CLEANED.csv',
-	 '../Minneapolis_2011-2020_CLEANED.csv', '../Cleveland_2011-2020_CLEANED.csv', '../Columbus_2011-2020_CLEANED.csv', '../Sault_Ste_Marie_2011-2020_CLEANED.csv'], 
-	48, 
-	8, 
-	'is_precip',
-	['Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'day_of_year_sin', 'day_of_year_cos', 'hour_of_day_sin', 'hour_of_day_cos', 'Pressure', 'Humidity', 'DewPoint', 'is_clear', 'is_precip', 'is_heavy_precip', 'is_tstorm'],
-	True)
+
+for predicted_var in ['is_precip', 'is_clear', 'WindSpeed']:
+	for prediction_interval in [12, 24, 48]:
+		for lookback_window in [3, 6]:
+			exploreModel('../Cleveland_2011-2020_CLEANED.csv', 
+				['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv',  '../FortWayne_2011-2020_CLEANED.csv', '../Milwaukee_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv',
+			 	'../Madison_2011-2020_CLEANED.csv',  '../GrandRapids_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', '../Toledo_2011-2020_CLEANED.csv', '../Columbus_2011-2020_CLEANED.csv',
+			 	'../KansasCity_2011-2020_CLEANED.csv', '../Minneapolis_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', '../Saginaw_2011-2020_CLEANED.csv'],
+				prediction_interval, 
+				lookback_window, 
+				predicted_var,
+				['Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'day_of_year_sin', 'day_of_year_cos', 'hour_of_day_sin', 'hour_of_day_cos', 'Pressure', 'Humidity', 'DewPoint', 'is_clear', 'is_partly_cloudy', 'is_fog', 'is_precip', 'is_heavy_precip', 'is_light_precip', 'is_tstorm'],
+				(True if ('is_' in predicted_var) else False)
+			)
+
+			print("=================\r\n")
 
 
 # PROBLEM: it appears that precipitation is not reflected in Condition until about March 2014!
@@ -154,6 +160,10 @@ exploreModel('../Chicago_2011-2020_CLEANED.csv',
 #		Temp = 		96% (12h, 8 loc)	91%  (12h, 4 loc) 	96% (24h, 8 loc)	92%(48h, 8 loc)							92% (96h, 8 loc)	87% (144h, 8 loc)
 #####################################################################################
 #
-#  Adding locations has the most effect on Wind prediction: e.g. 24h/12loc gives us 55% as opposed to 49% for 24h/8loc
-#  On the other hand, is_precip and is_clear are either unaffected by extra locations or affected negatively
+#  Adding farther locations has the most effect on Wind prediction: e.g. 24h/12loc gives us 55% as opposed to 49% for 24h/8loc
+#  On the other hand, is_precip and is_clear are either unaffected by extra farther locations or affected negatively
+# (adding closer locations, though, gives a small improvement for is_precip)
 #
+#  Adding a 2nd Hidden Layer to the Neural Network really helps! (But a 3rd one doesn't)
+#
+# For is-precip, increasing lookback window helps; for a 12h forecast, increasing LB window from 4h to 12h improved the score from 52% to 56%

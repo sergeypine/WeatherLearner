@@ -1,0 +1,71 @@
+FEW LOCATIONS ALL AROUND
+['../Peoria_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Milwaukee_2011-2020_CLEANED.csv',
+ '../Madison_2011-2020_CLEANED.csv', '../GrandRapids_2011-2020_CLEANED.csv']
+
+ is_precip	3h		6h		12h		lookback
+==========================================================================================
+predict interval
+12h			48		50		53
+24h			42		47		52
+48h			44		48		55
+72h			36		49		52
+
+is_clear	3h		6h		12h		lookback
+predict interval
+==========================================================================================
+12h			60		64		67
+24h			57		63		64	
+48h			54		58		62
+72h			53		57		63
+
+WindSpeed	3h		6h		12h		lookback
+predict interval
+==========================================================================================
+12h			12		46		54
+24h			4		39		49	
+48h			0		32		51
+72h			0		-		-
+
+
+
+
+MULTIPLE LOCATIONS FOR THE "Weather moves from West to East" THEORY
+['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv',  '../FortWayne_2011-2020_CLEANED.csv', '../Milwaukee_2011-2020_CLEANED.csv',
+ '../Madison_2011-2020_CLEANED.csv',  '../GrandRapids_2011-2020_CLEANED.csv', '../Duluth_2011-2020_CLEANED.csv', 
+ '../KansasCity_2011-2020_CLEANED.csv', '../Minniapolis_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv']
+
+  is_precip	3h		6h		lookback
+==========================================================================================
+predict interval
+12h			56		60		
+24h			51		56		
+48h			52		52		
+72h			46		52		
+
+is_clear	3h		6h		lookback
+predict interval
+==========================================================================================
+12h			68		70		
+24h			67		69			
+48h			60		63		
+72h			57		64		
+
+
+WindSpeed	3h		6h		lookback
+predict interval
+==========================================================================================
+12h			36		52		
+24h			44		54			
+48h			37		49		
+72h			35		53
+
+Temp	3h		6h		lookback
+predict interval
+==========================================================================================
+12h			93		95		
+24h			96		94			
+48h			78		85		
+72h			85		89
+
+
+ 
