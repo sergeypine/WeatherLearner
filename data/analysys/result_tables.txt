@@ -9,12 +9,11 @@ NOTES:
 
 - Sliding Window Approach with varying lookbacks and prediction intervals(how far in advance)
 
-- Predicting 4 characteristis for a **given hour**:
+- Predicting 4 variables for a **given hour**:
 	- Whether no clouds (is_clear)
 	- Whether there will be precipitation (is_precip)
 	- Wind Speed
 	- Temperature
-
 
 	
 - Features used (NOTE, using Sin() and Cos() for Day of Year and Hour of Day to capture time being circular):
@@ -103,7 +102,7 @@ predict interval
 48h			78		85		
 72h			85		89
 
-MULTIPLE LOCATIONS FOR THE "Weather moves from West to East" THEORY (Cleaveland)
+MULTIPLE LOCATIONS FOR THE "Weather moves from West to East" THEORY (Cleveland)
 ['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv',  '../FortWayne_2011-2020_CLEANED.csv', '../Milwaukee_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv',
 '../Madison_2011-2020_CLEANED.csv',  '../GrandRapids_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', '../Toledo_2011-2020_CLEANED.csv', '../Columbus_2011-2020_CLEANED.csv',
 '../KansasCity_2011-2020_CLEANED.csv', '../Minneapolis_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', '../Saginaw_2011-2020_CLEANED.csv'],
@@ -131,3 +130,31 @@ predict interval
 24h			54		58			
 48h			47		54		
 
+
+MULTIPLE LOCATIONS, PUT IN TWO CITIES IN THE EAST COMPARED TO THE ABOVE (Cleveland)
+
+['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv',  '../FortWayne_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv', '../Pittsburgh_2011-2020_CLEANED.csv',
+	'../Madison_2011-2020_CLEANED.csv',  '../GrandRapids_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', '../Toledo_2011-2020_CLEANED.csv', '../Columbus_2011-2020_CLEANED.csv',
+	'../KansasCity_2011-2020_CLEANED.csv', '../Des_Moines_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', '../Saginaw_2011-2020_CLEANED.csv', '../Toronto_2011-2020_CLEANED.csv']
+
+is_precip	3h		6h		lookback
+==========================================================================================
+predict interval
+12h			55		62					
+24h			51		52				
+48h			48		50													
+
+is_clear	3h		6h		lookback
+predict interval
+==========================================================================================
+12h			64		64						
+24h			61		67								
+48h			55		61								
+
+
+WindSpeed	3h		6h		lookback
+predict interval
+==========================================================================================
+12h			56		60					
+24h			46		56		
+48h			44		55				
