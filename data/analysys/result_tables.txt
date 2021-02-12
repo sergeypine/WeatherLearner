@@ -157,4 +157,23 @@ predict interval
 ==========================================================================================
 12h			56		60					
 24h			46		56		
-48h			44		55				
+48h			44		55
+
+
+*****************************************************
+*****************************************************
+Trying various Classification Methods for 24h/4h look back. Locations:
+
+['../Peoria_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Toledo_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv',
+ '../Madison_2011-2020_CLEANED.csv', '../GrandRapids_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv
+*****************************************************
+*****************************************************
+F1/MCC Scores:
+
+				is_clear	is_precip
+				----------------------
+MLP				62/52		51/47
+Naive Bayes		41/11		28/15
+Logistic		18/15		02/04
+SGD				12/08		01/02
+SVC				00/00		00/00	
