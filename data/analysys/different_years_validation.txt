@@ -147,3 +147,145 @@ MCC Score for VAR = is_precip Is 0.02802732379805278 for prediction interval = 2
 [[5841  326]
  [ 751   59]]
 =================
+
+*****************************************************************
+8 LOCATIONS, 6h LOOKBACK, PRIDICT FOR Half of 2019 and 2020
+-..re-defined is_clear to be True if Partly Cloudy
+*****************************************************************
+
+*************ALPHA = 0.2*********************************
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.5552941176470589 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.2990081049434062 for prediction interval = 12h and for lookback window = 6h
+[[4925 1791]
+ [1611 2124]]
+TRAIN: F1 Score for VAR = is_clear Is 0.9615214861774264 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.9422686212635661 for prediction interval = 12h and for lookback window = 6h
+[[23516   798]
+ [  161 11982]]
+=================
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.27693807898586054 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.20333939983624108 for prediction interval = 12h and for lookback window = 6h
+[[8684  583]
+ [ 900  284]]
+TRAIN: F1 Score for VAR = is_precip Is 0.9457364341085271 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.9394072567322643 for prediction interval = 12h and for lookback window = 6h
+[[32037    83]
+ [  372  3965]]
+=================
+
+*************ALPHA = 0.5*********************************
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.5326413548210872 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.2809475071320902 for prediction interval = 12h and for lookback window = 6h
+[[5079 1637]
+ [1785 1950]]
+TRAIN: F1 Score for VAR = is_clear Is 0.941354862505635 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.9118814755891663 for prediction interval = 12h and for lookback window = 6h
+[[23541   773]
+ [  658 11485]]
+=================
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.2697533970810267 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.2006675305707771 for prediction interval = 12h and for lookback window = 6h
+[[8732  535]
+ [ 916  268]]
+TRAIN: F1 Score for VAR = is_precip Is 0.8285193858964353 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.8171326031247148 for prediction interval = 12h and for lookback window = 6h
+[[31955   165]
+ [ 1153  3184]]
+=================
+
+
+
+
+*************ALPHA = 1.0*********************************
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.5520194091622663 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.3292144768679206 for prediction interval = 12h and for lookback window = 6h
+[[5378 1338]
+ [1801 1934]]
+TRAIN: F1 Score for VAR = is_clear Is 0.7757741894033494 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.67158530044032 for prediction interval = 12h and for lookback window = 6h
+[[22166  2148]
+ [ 3087  9056]]
+=================
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.31259333001493284 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.24691106211605787 for prediction interval = 12h and for lookback window = 6h
+[[8756  511]
+ [ 870  314]]
+TRAIN: F1 Score for VAR = is_precip Is 0.6730491803278689 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.6432743127140693 for prediction interval = 12h and for lookback window = 6h
+[[31398   722]
+ [ 1771  2566]]
+=================
+
+*************ALPHA = 1.5*********************************
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.5683247570040022 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.3544818123714393 for prediction interval = 12h and for lookback window = 6h
+[[5443 1273]
+ [1747 1988]]
+TRAIN: F1 Score for VAR = is_clear Is 0.7073446327683616 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.5748957604292128 for prediction interval = 12h and for lookback window = 6h
+[[21585  2729]
+ [ 4005  8138]]
+=================
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.23360399750156155 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.21556758870360698 for prediction interval = 12h and for lookback window = 6h
+[[9037  230]
+ [ 997  187]]
+TRAIN: F1 Score for VAR = is_precip Is 0.34692805881323296 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.36780749755904807 for prediction interval = 12h and for lookback window = 6h
+[[31735   385]
+ [ 3346   991]]
+=================
+
+
+*************ALPHA = 2.0*********************************
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.5580011897679953 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.35691303030858657 for prediction interval = 12h and for lookback window = 6h
+[[5603 1113]
+ [1859 1876]]
+TRAIN: F1 Score for VAR = is_clear Is 0.6546821975603045 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.5168240631290849 for prediction interval = 12h and for lookback window = 6h
+[[21789  2525]
+ [ 5005  7138]]
+=================
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.2412252712188896 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.23395468093695984 for prediction interval = 12h and for lookback window = 6h
+[[9073  194]
+ [ 995  189]]
+TRAIN: F1 Score for VAR = is_precip Is 0.25435669262143124 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.28290895279597034 for prediction interval = 12h and for lookback window = 6h
+[[31749   371]
+ [ 3651   686]]
+=================
+
+IS_CLEAR
+ 	alpha
+	0.2		1.3
+	1.0		1.07
+	2.0		1.0
+
+
+IS_PRECIP
+	alpha
+	0.2		0.3
+	1.0		0.36
+	2.0		0.18
