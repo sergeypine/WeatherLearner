@@ -151,6 +151,17 @@ MCC Score for VAR = is_precip Is 0.02802732379805278 for prediction interval = 2
 *****************************************************************
 8 LOCATIONS, 6h LOOKBACK, PRIDICT FOR Half of 2019 and 2020
 -..re-defined is_clear to be True if Partly Cloudy
+
+			exploreModel('../Chicago_2011-2020_CLEANED.csv', 
+				['../Peoria_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', 
+				 '../Des_Moines_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../GrandRapids_2011-2020_CLEANED.csv'],
+				prediction_interval, 
+				lookback_window, 
+				predicted_var,
+				['Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'day_of_year_sin', 'day_of_year_cos', 'Pressure', 'Humidity', 'DewPoint', 
+				'is_clear', 'is_precip', 'is_heavy_precip'],
+				(True if ('is_' in predicted_var) else False)
+			)
 *****************************************************************
 
 *************ALPHA = 0.2*********************************
@@ -277,15 +288,127 @@ TRAIN: MCC Score for VAR = is_precip Is 0.28290895279597034 for prediction inter
  [ 3651   686]]
 =================
 
-IS_CLEAR
- 	alpha
-	0.2		1.3
-	1.0		1.07
-	2.0		1.0
+
+*****************************************************************
+8 LOCATIONS, 6h LOOKBACK, PRIDICT FOR Half of 2019 and 2020
+USE XGBoost instead of Neural Network
+
+			exploreModel('../Chicago_2011-2020_CLEANED.csv', 
+				['../Peoria_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', 
+				 '../Des_Moines_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../GrandRapids_2011-2020_CLEANED.csv'],
+				prediction_interval, 
+				lookback_window, 
+				predicted_var,
+				['Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'day_of_year_sin', 'day_of_year_cos', 'Pressure', 'Humidity', 'DewPoint', 
+				'is_clear', 'is_precip', 'is_heavy_precip'],
+				(True if ('is_' in predicted_var) else False)
+			)
+*****************************************************************			
+
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.6008336926836281 for prediction interval = 12h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.40578550255357765 for prediction interval = 12h and for lookback window = 6h
+[[5584 1132]
+ [1645 2090]]
+TRAIN: F1 Score for VAR = is_clear Is 0.6175380051909529 for prediction interval = 12h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.46778115589039715 for prediction interval = 12h and for lookback window = 6h
+[[21543  2771]
+ [ 5481  6662]]
+=================
+
+ ==> THE BEST RESULT YET!
 
 
-IS_PRECIP
-	alpha
-	0.2		0.3
-	1.0		0.36
-	2.0		0.18
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_clear Is 0.46144259230409723 for prediction interval = 24h and for lookback window = 6h
+TEST: MCC Score for VAR = is_clear Is 0.24510108803444522 for prediction interval = 24h and for lookback window = 6h
+[[5428 1069]
+ [2388 1481]]
+TRAIN: F1 Score for VAR = is_clear Is 0.6835542080297325 for prediction interval = 24h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_clear Is 0.5804376866276916 for prediction interval = 24h and for lookback window = 6h
+[[22498  1442]
+ [ 5029  6989]]
+=================
+
+Merged Location Data; initial rows = 59477, final rows = 55722
+Generated Feature Set, observations in = 46324, out = 13315
+Feature Set feature count = 554
+TEST: F1 Score for VAR = is_precip Is 0.06492478226444971 for prediction interval = 24h and for lookback window = 6h
+TEST: MCC Score for VAR = is_precip Is 0.0699412074333461 for prediction interval = 24h and for lookback window = 6h
+[[9144   98]
+ [1083   41]]
+TRAIN: F1 Score for VAR = is_precip Is 0.43725135623869804 for prediction interval = 24h and for lookback window = 6h
+TRAIN: MCC Score for VAR = is_precip Is 0.4959906861927119 for prediction interval = 24h and for lookback window = 6h
+[[31637    47]
+ [ 3065  1209]]
+=================
+
+===> 24h predictions are very underwhelming!
+
+
+...Tried adding data before March 2014 to predict is_clear. Didn't make a difference!
+...So far, is_clear F2 is stuck in mid-40's and MCC in mid-20's no matter what we do!
+
+
+
+*********************************************
+
+PRECIPITATION: 
+	-redefined it as : It precipitates at hour X if it precipitates anywhere in the X-3 ... X+3 range
+	-introduce piecewise split: X samples train, Y samples, Z samples skip (to prevent data leakage
+	-For example: featureset_train, featureset_test = piecewiseSplit(featureset, 8, 2, 3)
+	-Proved that adjacent locations are necessary for better prediction and that they are *to the East* 
+	-Can get it more than half of the times correct **no more than 12h in advance**
+	-Use MLP Classifier
+
+MLP==>
+
+Loaded file for VAR = is_precip, predictionInterval = 12h, lookback = 2h
+Piecewise Split: trainset len = 35844, testset_len = 8928
+TEST: F1 Score for VAR = is_precip Is 0.5002573340195575 for prediction interval = 12h and for lookback window = 2h
+TEST: MCC Score for VAR = is_precip Is 0.27230466176252965 for prediction interval = 12h and for lookback window = 2h
+[[4557 1887]
+ [1026 1458]]
+TRAIN: F1 Score for VAR = is_precip Is 0.8895536125172573 for prediction interval = 12h and for lookback window = 2h
+TRAIN: MCC Score for VAR = is_precip Is 0.8616125629591634 for prediction interval = 12h and for lookback window = 2h
+[[26192   121]
+ [ 1799  7732]]
+
+
+
+
+'../Columbus_2011-2020_CLEANED.csv',
+['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv',  '../Indianapolis_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', 
+ '../GrandRapids_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Cincinatti_2011-2020_CLEANED.csv'],
+prediction_interval, 
+lookback_window, 
+predicted_var,
+['day_of_year_sin', 'day_of_year_cos', 'hour_of_day_cos', 'hour_of_day_sin', 'DewPoint', 'Pressure', 'Humidity', 'Temp', 'WindNortherly', 'WindEasterly', 'WindSpeed'],
+['cloud_intensity', 'precip_intensity']
+			)
+
+=================
+
+WINDSPEED 
+	-is also predictable within 12h to a decent degree:
+	-using .corr(), established that WindSpeed variable is by far the most relevant
+	-predicting for hour X is really predicting average in the X-2 .. X+2 range
+	-using XGBoost
+
+Loaded file for VAR = WindSpeed, predictionInterval = 12h, lookback = 3h
+Dropped 165 columns, 150 remaining
+Piecewise Split: trainset len = 35788, testset_len = 8928
+TEST MSE for VAR = WindSpeed Is 10.617263628725825 for prediction interval = 12h and for lookback window = 3h
+TEST R2 Score for VAR = WindSpeed Is 0.5035784163659303 for prediction interval = 12h and for lookback window = 3h
+TRAIN MSE for VAR = WindSpeed Is 2.7144010537912577 for prediction interval = 12h and for lookback window = 3h
+TRAIN R2 Score for VAR = WindSpeed Is 0.8762328202766236 for prediction interval = 12h and for lookback window = 3h
+
+
+'../Columbus_2011-2020_CLEANED.csv',
+['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv',  '../Indianapolis_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', 
+ '../GrandRapids_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Cincinatti_2011-2020_CLEANED.csv'],
+prediction_interval, 
+lookback_window, 
+predicted_var,
+['day_of_year_sin', 'day_of_year_cos', 'hour_of_day_cos', 'hour_of_day_sin', 'DewPoint',  'Humidity', 'Temp', 'WindNortherly', 'WindEasterly', 'WindSpeed'],
+['WindSpeed']

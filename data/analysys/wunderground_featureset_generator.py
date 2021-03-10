@@ -26,13 +26,13 @@ from sklearn.preprocessing import PolynomialFeatures
 pd.set_option('display.max_rows', 250)
 
 #=====================================================================
-def saveFeatureSet(targetLocationFile, adjacentLocationFiles, predictionHoursAhead, lookBackHours, predictedVariable, dependentVariables, isClassification):
+def saveFeatureSet(targetLocationFile, adjacentLocationFiles, predictionHoursAhead, lookBackHours, predictedVariable, variablesForLookBack, variablesToAggregate):
 	
 	#(1) Merge the datasets
 	merged_df = createMergedDataframe(targetLocationFile, adjacentLocationFiles)
 
 	#(2) Build the featureset (NOTE: this takes forever, begging for optimization)
-	featureset = buildFeatureSet(merged_df, predictionHoursAhead, lookBackHours, dependentVariables, predictedVariable, len(adjacentLocationFiles))
+	featureset = buildFeatureSet(merged_df, predictionHoursAhead, lookBackHours, variablesForLookBack, variablesToAggregate, predictedVariable, len(adjacentLocationFiles))
 
 	featureset.to_csv("featureset_{}_LocationCount{}_LookBack{}h_LookAhead{}h.csv".format(predictedVariable,  len(adjacentLocationFiles), lookBackHours, predictionHoursAhead), index = False)
 
@@ -56,7 +56,7 @@ def createMergedDataframe(targetLocationFile, adjacentLocationFiles):
 	return merged_df
 
 #=====================================================================
-def buildFeatureSet(mergedDf, predictionHoursAhead, lookBackHours, featureVariables, predictedVariable, nAdjacentLocations):
+def buildFeatureSet(mergedDf, predictionHoursAhead, lookBackHours, variablesForLookBack, variablesToAggregate, predictedVariable, nAdjacentLocations):
 	earliest_observation_ts = mergedDf['Time'].min()
 	current_observation_ts = mergedDf['Time'].max()
 
@@ -64,6 +64,8 @@ def buildFeatureSet(mergedDf, predictionHoursAhead, lookBackHours, featureVariab
 	observations_excluded = 0
 
 	row_dicts = []
+	loop_guard = 0
+
 	#iterate from the last iteration backwards
 	while(current_observation_ts - timedelta(hours=1) >= earliest_observation_ts):
 		# OPTIMIZATION: pair down the DF to cover the vicinity time window only
@@ -71,14 +73,19 @@ def buildFeatureSet(mergedDf, predictionHoursAhead, lookBackHours, featureVariab
 
 		if checkNHoursBeforeTsPresent(timeVicinityDf, current_observation_ts - timedelta(hours = predictionHoursAhead), lookBackHours) and len(timeVicinityDf.loc[current_observation_ts : current_observation_ts]) == 1:
 			observations_included = observations_included + 1
-			row_dict = buildFeatureRow(timeVicinityDf, current_observation_ts, predictionHoursAhead, lookBackHours, featureVariables, predictedVariable, nAdjacentLocations)
+			row_dict = buildFeatureRow(timeVicinityDf, current_observation_ts, predictionHoursAhead, lookBackHours, variablesForLookBack, variablesToAggregate, predictedVariable, nAdjacentLocations)
 			row_dicts.append(row_dict)
 		else:
 			observations_excluded = observations_excluded + 1
 
 
 		current_observation_ts = current_observation_ts - timedelta(hours = 1)
-		#print("...processing for TS = {}".format(current_observation_ts))
+		
+		#loop_guard = loop_guard + 1
+		#if loop_guard > 100:
+		#	break
+
+		print("...processing for TS = {}".format(current_observation_ts))
 
 	feature_set_df = pd.DataFrame(row_dicts)	
 	print("Generated Feature Set, observations in = {}, out = {}".format(observations_included, observations_excluded))
@@ -91,7 +98,8 @@ def checkNHoursBeforeTsPresent(mergedDf, ts, hourCount):
 	return len(mergedDf.loc[ts - timedelta(hours = hourCount - 1) : ts]) == hourCount
 
 #=====================================================================
-def buildFeatureRow(mergedDf, predictionTs, predictionHoursAhead, lookBackHours, featureVariables, predictedVariable, nAdjacentLocations):
+def buildFeatureRow(mergedDf, predictionTs, predictionHoursAhead, lookBackHours, featureVariables, variablesToAggregate, predictedVariable, nAdjacentLocations):
+
 	current_ts = predictionTs - timedelta(hours = predictionHoursAhead + lookBackHours)
 	end_ts = predictionTs - timedelta(hours = predictionHoursAhead)
 	hour_num = lookBackHours
@@ -115,21 +123,22 @@ def buildFeatureRow(mergedDf, predictionTs, predictionHoursAhead, lookBackHours,
 					row_dict[generateFeaturesetFeatureName(feature_var, l, hour_num)] = current_row["{}{}".format(feature_var,l)]
 
 		hour_num = hour_num - 1
-	
-	#########################################################################	
 	# Capture longer running aggregations
 	# TODO -  (need to figure out how to speed up Pandas...)
-	#for hrs in [12, 24, 48, 72]:
+	for hrs in [6, 12, 24]:
 
-	#	current_ts = predictionTs - timedelta(hours = hrs)
-	#	end_ts = predictionTs
-	#	subsetDf = mergedDf.loc[current_ts : end_ts]
+		current_ts = predictionTs - timedelta(hours = hrs + predictionHoursAhead)
+		end_ts = predictionTs - timedelta(hours = predictionHoursAhead)
+		subsetDf = mergedDf.loc[current_ts : end_ts]
 
-	#	setStatsLastNhours(subsetDf, hrs, row_dict, 'precip_intensity')
-	#	setStatsLastNhours(subsetDf, hrs, row_dict, 'cloud_intensity')
-	#	setStatsLastNhours(subsetDf, hrs, row_dict, 'WindNortherly')
-	#	setStatsLastNhours(subsetDf, hrs, row_dict, 'WindEasterly')
-	#########################################################################
+		# For target Location
+		for agg_var in variablesToAggregate:
+			setStatsLastNhours(subsetDf, hrs, row_dict, agg_var, 0)
+
+		# For adjacent locations
+		for l in range(1, nAdjacentLocations + 1):
+			for agg_var in variablesToAggregate:
+				setStatsLastNhours(subsetDf, hrs, row_dict, agg_var, l)		
 
 	#..and don't forget the predicted variable
 	setPredictedVar(mergedDf, row_dict, predictionTs, predictedVariable)
@@ -147,7 +156,7 @@ def setPredictedVar(mergedDf, rowDict, predictionTs, predictedVariable):
 	
 	#6h interval
 	current_ts = predictionTs - timedelta(hours = 2)
-	end_ts = predictionTs + timedelta(hours = 3)
+	end_ts = predictionTs + timedelta(hours = 2)
 	subsetDf = mergedDf.loc[current_ts : end_ts]
 	
 	# accumulate all values over that interval
@@ -172,27 +181,33 @@ def setPredictedVar(mergedDf, rowDict, predictionTs, predictedVariable):
 
 
 #=====================================================================
-def setStatsLastNhours(subsetDf, nHours, rowDict, averagedVar):
+def setStatsLastNhours(subsetDf, nHours, rowDict, averagedVar, locN):
 
-	interval_vals = subsetDf[[averagedVar]]
+	var_name = averagedVar
+	if (locN != 0):
+		var_name = "{}{}".format(averagedVar, locN)
 
-	rowDict["{}_avg_{}h".format(averagedVar, nHours)] = np.mean(interval_vals)
-	rowDict["{}_std_{}h".format(averagedVar, nHours)] = np.std(interval_vals)
+	interval_vals = subsetDf[var_name]
+
+	rowDict["{}_loc{}_avg_{}h".format(averagedVar, locN, nHours)] = np.mean(interval_vals)
+	#rowDict["{}_loc{}_std_{}h".format(averagedVar, locN, nHours)] = np.std(interval_vals)
+	rowDict["{}_loc{}_min_{}h".format(averagedVar, locN, nHours)] = np.min(interval_vals)
+	rowDict["{}_loc{}_max_{}h".format(averagedVar, locN, nHours)] = np.max(interval_vals)
 
 #=====================================================================
 
-for predicted_var in ['is_clear', 'is_precip', 'Temp', 'WindSpeed']:
-	for prediction_interval in [24]:
-		for lookback_window in [2]:
-			saveFeatureSet('../Chicago_2011-2020_CLEANED.csv', 
-				#['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv', '../GreenBay_2011-2020_CLEANED.csv', 
-				# '../GrandRapids_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Indianapolis_2011-2020_CLEANED.csv'],
-				['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv'],
+for predicted_var in ['WindSpeed']:
+	for prediction_interval in [12]:
+		for lookback_window in [3]:
+			saveFeatureSet(
+				'../Columbus_2011-2020_CLEANED.csv',
+				['../Peoria_2011-2020_CLEANED.csv', '../CedarRapids_2011-2020_CLEANED.csv', '../Madison_2011-2020_CLEANED.csv',  '../Indianapolis_2011-2020_CLEANED.csv', '../Chicago_2011-2020_CLEANED.csv', 
+				 '../GrandRapids_2011-2020_CLEANED.csv', '../FortWayne_2011-2020_CLEANED.csv', '../Cincinatti_2011-2020_CLEANED.csv'],
 				prediction_interval, 
 				lookback_window, 
 				predicted_var,
-				['day_of_year_sin', 'day_of_year_cos', 'hour_of_day_cos', 'hour_of_day_sin', 'Temp', 'WindSpeed', 'WindNortherly', 'WindEasterly', 'is_var', 'Pressure', 'Humidity', 'DewPoint', 'cloud_intensity', 'precip_intensity'],
-				(True if ('is_' in predicted_var) else False)
+				['day_of_year_sin', 'day_of_year_cos', 'hour_of_day_cos', 'hour_of_day_sin', 'DewPoint',  'Humidity', 'Temp', 'WindNortherly', 'WindEasterly', 'WindSpeed'],
+				['WindSpeed']
 			)
 
 			print("=================\r\n")
