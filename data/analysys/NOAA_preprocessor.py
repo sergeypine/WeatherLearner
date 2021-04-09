@@ -36,12 +36,15 @@ def preprocFile(filePath):
 	##################################################################################
 
 	# Precipitation: replace 'T' ("trace amount") with a small value
-	raw_df.loc[raw_df['HourlyPrecipitation'].str.strip() == 'T', 'HourlyPrecipitation'] = 0.002
+	raw_df.loc[raw_df['HourlyPrecipitation'].str.strip() == 'T', 'HourlyPrecipitation'] = 0.005
 
 	# Weather Type: decipher the finicky Government Terminology
 	raw_df['HourlyPresentWeatherType'] = raw_df['HourlyPresentWeatherType'].apply(preprocWeatherType)
 
 	# Sky Condition: decipher the finicky Government Terminology
+	#	...but first, impute missing values
+	raw_df['HourlySkyConditions'] = raw_df['HourlySkyConditions'].fillna(method="ffill")
+	raw_df['HourlySkyConditions'] = raw_df['HourlySkyConditions'].fillna(method="bfill")
 	raw_df['HourlySkyConditions'], raw_df['HourlyCloudHeight'] = zip(*raw_df['HourlySkyConditions'].apply(preprocSkyConditions))
 
 	#WindDirection: NAN-ify VRB values (aka "Variable Wind")
@@ -86,14 +89,13 @@ def preprocFile(filePath):
 	agg_df = agg_df.fillna(method="ffill")
 	agg_df = agg_df.fillna(method="bfill")
 
-	dumpDiagnostics(agg_df)
-
 	################################################################################
 	# (E) Derive additional variables helpful for ML purposes
 	################################################################################
 
 	# Summarize Sky Condition in non-categorical format
-	agg_df['_is_clear'], agg_df['_cloud_intensity'] = zip(*agg_df['CloudCondition'].apply(deriveSkyConditionVars))
+	#agg_df['_is_clear'], agg_df['_cloud_intensity'] = zip(*agg_df[['CloudCondition']].apply(deriveSkyConditionVars))
+	agg_df['_is_clear'], agg_df['_cloud_intensity'] = zip(*agg_df.apply(lambda row: deriveSkyConditionVars(row['CloudCondition'], row['WeatherType']), axis=1))
 
 	# Summarize Weather Type in non-categorical format
 	agg_df['_is_precip'], agg_df['_is_thunder'], agg_df['_is_snow'], agg_df['_is_mist'] = zip(*agg_df['WeatherType'].apply(deriveWeatherTypeVars))
@@ -109,6 +111,8 @@ def preprocFile(filePath):
 	agg_df['_wind_dir_sin'] = np.sin(2 * np.pi * agg_df['WindDirection'] / 360)
 	agg_df['_wind_dir_cos'] = np.cos(2 * np.pi * agg_df['WindDirection'] / 360)
 
+	dumpDiagnostics(agg_df)
+
 	return agg_df
 #########################################################
 def dumpDiagnostics(df):
@@ -116,13 +120,25 @@ def dumpDiagnostics(df):
 		AvgPrecip = pd.NamedAgg(column='Precipitation', aggfunc="mean"),
 		Count = pd.NamedAgg(column='Precipitation', aggfunc="count")
 		)
-	print(diag_df)
+	print(diag_df.sort_values(by='AvgPrecip'))
+
+	diag_df = df.groupby('_is_precip').agg(
+		AvgPrecip = pd.NamedAgg(column='Precipitation', aggfunc="mean"),
+		Count = pd.NamedAgg(column='Precipitation', aggfunc="count")
+		)
+	print(diag_df.sort_values(by='AvgPrecip'))	
 
 	diag_df = df.groupby('CloudCondition').agg(
 		AvgPrecip = pd.NamedAgg(column='Precipitation', aggfunc="mean"),
 		Count = pd.NamedAgg(column='Precipitation', aggfunc="count")
 		)
-	print(diag_df)
+	print(diag_df.sort_values(by='AvgPrecip'))
+
+	diag_df = df.groupby('WeatherType').agg(
+		AvgCloudIntensity = pd.NamedAgg(column='_cloud_intensity', aggfunc="mean"),
+		Count = pd.NamedAgg(column='_cloud_intensity', aggfunc="count")
+		)
+	print(diag_df.sort_values(by='AvgCloudIntensity'))
 
 #########################################################
 
@@ -131,6 +147,7 @@ def removeJunkSuffixesAndPrefixes(df, variables):
 		if df[variable].dtypes != np.float64:
 			df.loc[df[variable].str.contains('s', na=False), variable] = ''
 			df.loc[df[variable].str.contains('V', na=False), variable] = ''
+			df.loc[df[variable].str.contains('\\*', na=False), variable] = ''
 
 	return df
 
@@ -145,8 +162,9 @@ coverCodes = {
 }
 def preprocSkyConditions(skyCondition):
 	skyCondition = str(skyCondition).strip()
-	if skyCondition == "":
-		return "", 0
+	if skyCondition == "nan":
+		print("TADA sky")
+		return None, 0
 
 	# Format Example: BKN:07 6 BKN:07 100 BKN:07 120
 	# Sky Condition is reported in 3 layers; as per data set guidance, consider only the 3rd layer to summarize overall condition
@@ -172,6 +190,8 @@ def preprocSkyConditions(skyCondition):
 			height = int(skyCondition[last_colon_index+3 :]) * 100
 		except ValueError:
 			height = 1
+	else:
+		height = 20000 #If it's clear, assume clouds are very very high
 	
 	return cover, height
 
@@ -191,15 +211,16 @@ conditionIntensityMap = {
 	"Clear" : 0,
 	"MostlyClear" : 1,
 	"PartlyCloudy" : 2,
-	"MostlyCloudy": 3,
-	"Cloudy": 4,
-	"Obscured": 4
+	"MostlyCloudy": 4,
+	"Cloudy": 5,
+	"Obscured": 5
 }
-def deriveSkyConditionVars(skyCondition):
+def deriveSkyConditionVars(skyCondition, weatherType):
 	is_clear = 0
 	cloud_intensity = 0
 
-	if skyCondition == "Clear" or skyCondition == "MostlyClear":
+	# We consider the weather "Clear" if there are few clouds and no mist or fog
+	if (skyCondition == "Clear" or skyCondition == "MostlyClear" or skyCondition == "PartlyCloudy") and ('Fog' not in weatherType and 'Mist' not in weatherType):
 		is_clear = 1
 
 	cloud_intensity = conditionIntensityMap[skyCondition]	
@@ -253,12 +274,12 @@ def preprocWeatherType(weatherType):
 	if thunder_suffix != "":
 		return thunder_suffix
 	
-	return ''
+	return None
 
 def aggWeatherType(series):
 	series = series.values
 	if len(series) < 1:
-		return ""
+		return None
 
 	# Err on the side of the most severe weather
 	priorities = ["Heavy", "RainThunder", "Rain", "Snow", "Hail", "UnknownPrecipitation", "Thunder", "Mist", "Fog", "Haze"]
@@ -284,20 +305,22 @@ def deriveWeatherTypeVars(weatherType):
 	if "Snow" in weatherType:
 		is_snow = 1
 
-	if "Mist" in weatherType:
+	# According to online resources, mist and fog are different degrees of the same thing: droplets of water suspended in the air
+	#	(and neither is considered "precipitation")
+	if ("Mist" in weatherType) or ("Fog" in weatherType): 
 		is_mist = 1
 
 
 	return is_precip, is_thunder, is_snow, is_mist
 
 
-
 #########################################################
 def getPreprocFileName(filePath):
 	return filePath.replace('.csv', '_PREPROC.csv')
 
-files_to_preproc = ['../NOAA/noaa_2011-2020_chicago.csv', '../NOAA/noaa_2011-2020_madison.csv',  '../NOAA/noaa_2011-2020_quincy.csv', '../NOAA/noaa_2011-2020_cedar-rapids.csv',
-	'../NOAA/noaa_2011-2020_green-bay.csv', '../NOAA/noaa_2011-2020_indianapolis.csv',  '../NOAA/noaa_2011-2020_lansing.csv', '../NOAA/noaa_2011-2020_toledo.csv']
+files_to_preproc = ['../NOAA/noaa_2011-2020_chicago.csv',  '../NOAA/noaa_2011-2020_columbus.csv', '../NOAA/noaa_2011-2020_des-moines.csv', '../NOAA/noaa_2011-2020_st-louis.csv',  
+'../NOAA/noaa_2011-2020_rochester.csv', '../NOAA/noaa_2011-2020_madison.csv',  '../NOAA/noaa_2011-2020_quincy.csv', '../NOAA/noaa_2011-2020_cedar-rapids.csv', 
+'../NOAA/noaa_2011-2020_green-bay.csv', '../NOAA/noaa_2011-2020_indianapolis.csv',  '../NOAA/noaa_2011-2020_lansing.csv', '../NOAA/noaa_2011-2020_toledo.csv']
 
 preproc_count = 0
 for file_to_preproc in files_to_preproc:
