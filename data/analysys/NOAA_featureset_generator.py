@@ -94,7 +94,7 @@ def buildFeatureRow(mergedDf, predictionTs, predictionHoursAhead, lookBackHours,
 		hour_num = hour_num - 1
 	# Capture longer running aggregations
 	# TODO -  (need to figure out how to speed up Pandas...)
-	for hrs in [4, 12]:
+	for hrs in [6, 18]:
 
 		current_ts = predictionTs - timedelta(hours = hrs + predictionHoursAhead)
 		end_ts = predictionTs - timedelta(hours = predictionHoursAhead)
