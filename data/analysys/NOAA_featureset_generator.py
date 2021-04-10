@@ -168,7 +168,7 @@ def setStatsLastNhours(subsetDf, nHours, rowDict, averagedVar, locN):
 
 #=====================================================================
 
-for predicted_var in ['_is_precip', '_is_clear', 'Temp', 'WindSpeed']:
+for predicted_var in ['WindSpeed']:
 	for prediction_interval in [12, 24]:
 		for lookback_window in [3]:
 			saveFeatureSet(
