@@ -352,7 +352,8 @@ def buildLinearModel(isBinary, label_width):
 	model = tf.keras.Sequential([
 	 	# Take the last time-step.
     	# Shape [batch, time, features] => [batch, 1, features]
-    	tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
+    	#tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
+    	tf.keras.layers.Flatten(),
 
 	    tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
 	    tf.keras.layers.Reshape([label_width, 1]),
@@ -387,8 +388,9 @@ def buildDNNModel(isBinary, label_width):
 	model = tf.keras.Sequential([
      # Take the last time step.
      # Shape [batch, time, features] => [batch, 1, features]
-     tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-     
+     #tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
+     tf.keras.layers.Flatten(),
+
      tf.keras.layers.Dense(units=400, activation='relu'),
      tf.keras.layers.Dense(units=200, activation='relu'),
 
@@ -408,7 +410,7 @@ def buildConvModel(isBinary, lookbackHours, label_width):
 		# Shape [batch, time, features] => [batch, CONV_WIDTH, features]
     	tf.keras.layers.Lambda(lambda x: x[:, -CONV_WIDTH:, :]),
 
-	    tf.keras.layers.Conv1D(filters=100,
+	    tf.keras.layers.Conv1D(filters=200,
 	                           kernel_size=(CONV_WIDTH),
 	                           activation='relu'),
 	    #tf.keras.layers.Dense(units=100, activation='relu'),
@@ -435,10 +437,12 @@ def buildLSTMModel(isBinary, label_width):
 	model.compile(loss=_loss, optimizer='adam', metrics = [_metrics])
 	return model
 
+REGRESSION_METRICS = [ tf.keras.metrics.RootMeanSquaredError()]
+CLASSIFICATION_METRICS =[tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
 def getActivationLossAndMetrics(isBinary):
-	activation, loss, metrics = "linear", 'mean_squared_error', [ tf.keras.metrics.RootMeanSquaredError()]
+	activation, loss, metrics = "linear", 'mean_squared_error', REGRESSION_METRICS
 	if isBinary:
-		activation, loss, metrics = "sigmoid", tf.keras.losses.BinaryCrossentropy(), [tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
+		activation, loss, metrics = "sigmoid", tf.keras.losses.BinaryCrossentropy(), CLASSIFICATION_METRICS
 
 	return activation, loss, metrics
 
@@ -489,9 +493,9 @@ ahiDict = {'Temp' : 1,
 		   }
 
 learningMissions = []
-for var in ['_is_clear']:
-	for predictionHrs in [12]:
-		for modelType in ['NN']:
+for var in ['_is_clear', '_is_precip', 'Temp', 'WindSpeed']:
+	for predictionHrs in [6, 12, 18, 24]:
+		for modelType in ['LINEAR', 'NN', 'DNN', 'CNN']:
 			all_features = allFeatures.copy()
 			all_features.remove(var)
 			lm = LearningMission(targetLocation = '../processed-data/noaa_2011-2020_chicago_PREPROC.csv',
@@ -503,7 +507,7 @@ for var in ['_is_clear']:
 								 predictedVariable = var,
 								 featuresToUse = all_features,
 								 lookAheadHrs = predictionHrs,
-								 lookBackHours = 4,
+								 lookBackHours = 16 if modelType == 'CNN' else 4,
 								 aggHalfInterval = ahiDict[var],
 								 modelToUse = modelType
 		 					    )
