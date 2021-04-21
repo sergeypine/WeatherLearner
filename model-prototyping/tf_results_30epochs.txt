@@ -1,0 +1,219 @@
+Predict TEMP 6h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.94, 'RMSE': 4.72, 'MAE': 3.66, 'MAPE': '12.1%'}
+=================
+
+Predict TEMP 6h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.98, 'RMSE': 2.82, 'MAE': 2.11, 'MAPE': '7.3%'}
+=================
+
+Predict TEMP 6h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.98, 'RMSE': 2.78, 'MAE': 2.06, 'MAPE': '7.89%'}
+=================
+
+
+
+Predict TEMP 12h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.92, 'RMSE': 5.62, 'MAE': 4.36, 'MAPE': '16.57%'}
+=================
+
+Predict TEMP 12h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.95, 'RMSE': 4.24, 'MAE': 3.09, 'MAPE': '12.78%'}
+=================
+
+Predict TEMP 12h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.95, 'RMSE': 4.12, 'MAE': 3.07, 'MAPE': '11.36%'}
+=================
+
+
+
+Predict TEMP 18h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.9, 'RMSE': 6.22, 'MAE': 4.76, 'MAPE': '19.72%'}
+=================
+
+Predict TEMP 18h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.93, 'RMSE': 5.17, 'MAE': 3.91, 'MAPE': '13.5%'}
+=================
+
+Predict TEMP 18h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.91, 'RMSE': 5.81, 'MAE': 4.52, 'MAPE': '15.46%'}
+=================
+
+
+
+Predict TEMP 24h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.88, 'RMSE': 6.9, 'MAE': 5.25, 'MAPE': '23.7%'}
+=================
+
+Predict TEMP 24h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.87, 'RMSE': 7.21, 'MAE': 5.64, 'MAPE': '19.99%'}
+=================
+
+Predict TEMP 24h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 3h)
+{'R2': 0.89, 'RMSE': 6.44, 'MAE': 4.95, 'MAPE': '18.36%'}
+=================
+
+
+
+Predict WINDSPEED 6h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.47, 'RMSE': 3.47, 'MAE': 2.66, 'MAPE': '104.45%'}
+=================
+
+Predict WINDSPEED 6h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.63, 'RMSE': 2.87, 'MAE': 2.22, 'MAPE': '69.82%'}
+=================
+
+Predict WINDSPEED 6h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.59, 'RMSE': 3.04, 'MAE': 2.36, 'MAPE': '65.72%'}
+=================
+
+
+
+Predict WINDSPEED 12h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.3, 'RMSE': 3.98, 'MAE': 3.05, 'MAPE': '118.54%'}
+=================
+
+Predict WINDSPEED 12h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.34, 'RMSE': 3.85, 'MAE': 2.96, 'MAPE': '84.08%'}
+=================
+
+Predict WINDSPEED 12h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.31, 'RMSE': 3.94, 'MAE': 3.06, 'MAPE': '84.36%'}
+=================
+
+
+
+Predict WINDSPEED 18h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.2, 'RMSE': 4.27, 'MAE': 3.26, 'MAPE': '127.71%'}
+=================
+
+Predict WINDSPEED 18h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.02, 'RMSE': 4.71, 'MAE': 3.65, 'MAPE': '97.53%'}
+=================
+
+Predict WINDSPEED 18h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.11, 'RMSE': 4.49, 'MAE': 3.46, 'MAPE': '97.27%'}
+=================
+
+
+
+Predict WINDSPEED 24h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': 0.13, 'RMSE': 4.44, 'MAE': 3.38, 'MAPE': '133.05%'}
+=================
+
+Predict WINDSPEED 24h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': -0.14, 'RMSE': 5.12, 'MAE': 3.97, 'MAPE': '114.47%'}
+=================
+
+Predict WINDSPEED 24h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 3h)
+{'R2': -0.12, 'RMSE': 5.06, 'MAE': 3.9, 'MAPE': '111.27%'}
+=================
+
+
+
+Predict _IS_PRECIP 6h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.56, 'Precision': 0.83, 'F1:': 0.67, 'MCC:': 0.6}
+=================
+
+Predict _IS_PRECIP 6h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.4, 'Precision': 0.99, 'F1:': 0.57, 'MCC:': 0.57}
+=================
+
+Predict _IS_PRECIP 6h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.38, 'Precision': 0.99, 'F1:': 0.55, 'MCC:': 0.55}
+=================
+
+
+
+Predict _IS_PRECIP 12h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.3, 'Precision': 0.74, 'F1:': 0.42, 'MCC:': 0.37}
+=================
+
+Predict _IS_PRECIP 12h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.26, 'Precision': 0.84, 'F1:': 0.4, 'MCC:': 0.39}
+=================
+
+Predict _IS_PRECIP 12h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.3, 'Precision': 0.84, 'F1:': 0.44, 'MCC:': 0.42}
+=================
+
+
+
+Predict _IS_PRECIP 18h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.15, 'Precision': 0.66, 'F1:': 0.25, 'MCC:': 0.23}
+=================
+
+Predict _IS_PRECIP 18h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.25, 'Precision': 0.64, 'F1:': 0.36, 'MCC:': 0.29}
+=================
+
+Predict _IS_PRECIP 18h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.25, 'Precision': 0.68, 'F1:': 0.37, 'MCC:': 0.31}
+=================
+
+
+
+Predict _IS_PRECIP 24h ahead using LINEAR model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.05, 'Precision': 0.54, 'F1:': 0.09, 'MCC:': 0.1}
+=================
+
+Predict _IS_PRECIP 24h ahead using DNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.21, 'Precision': 0.42, 'F1:': 0.28, 'MCC:': 0.14}
+=================
+
+Predict _IS_PRECIP 24h ahead using CNN model (location count = 8,  feature count = 10, lookback = 9h, agg interval = 7h)
+{'Recall': 0.12, 'Precision': 0.6, 'F1:': 0.21, 'MCC:': 0.19}
+=================
+
+
+Predict _IS_CLOUDY 6h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.94, 'Precision': 0.92, 'F1:': 0.93, 'MCC:': 0.66}
+=================
+
+Predict _IS_CLOUDY 6h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.81, 'Precision': 0.99, 'F1:': 0.89, 'MCC:': 0.67}
+=================
+
+Predict _IS_CLOUDY 6h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.8, 'Precision': 0.99, 'F1:': 0.89, 'MCC:': 0.67}
+=================
+
+
+
+Predict _IS_CLOUDY 12h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.9, 'Precision': 0.88, 'F1:': 0.89, 'MCC:': 0.45}
+=================
+
+Predict _IS_CLOUDY 12h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.75, 'Precision': 0.95, 'F1:': 0.83, 'MCC:': 0.49}
+=================
+
+Predict _IS_CLOUDY 12h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.75, 'Precision': 0.94, 'F1:': 0.83, 'MCC:': 0.47}
+=================
+
+
+
+Predict _IS_CLOUDY 18h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.89, 'Precision': 0.85, 'F1:': 0.87, 'MCC:': 0.3}
+=================
+
+Predict _IS_CLOUDY 18h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.74, 'Precision': 0.89, 'F1:': 0.81, 'MCC:': 0.33}
+=================
+
+Predict _IS_CLOUDY 18h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.75, 'Precision': 0.89, 'F1:': 0.82, 'MCC:': 0.34}
+=================
+
+
+
+Predict _IS_CLOUDY 24h ahead using LINEAR model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.89, 'Precision': 0.83, 'F1:': 0.86, 'MCC:': 0.2}
+=================
+
+Predict _IS_CLOUDY 24h ahead using DNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.73, 'Precision': 0.86, 'F1:': 0.79, 'MCC:': 0.24}
+=================
+
+Predict _IS_CLOUDY 24h ahead using CNN model (location count = 8,  feature count = 9, lookback = 9h, agg interval = 7h)
+{'Recall': 0.75, 'Precision': 0.87, 'F1:': 0.8, 'MCC:': 0.27}
