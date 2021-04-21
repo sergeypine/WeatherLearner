@@ -18,12 +18,13 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
+import tensorflow_addons as tfa
 
 pd.set_option('display.max_rows', 250)
 pd.set_option('display.max_columns', 250)
 
 #=====================================================================
-def exploreModel(mission, trainingEpochs = 20):
+def exploreModel(mission):
 
 	# Load the Target Location and Adjacent Locations Datasets and drop the unused columns
 	featureset = buildFeatureSet(mission.targetLocation, mission.adjacentLocations, mission.predictedVariable, mission.featuresToUse)
@@ -49,6 +50,7 @@ def exploreModel(mission, trainingEpochs = 20):
 		print(f'Inputs shape (batch, time, features): {example_inputs.shape}')
 		print(f'Labels shape (batch, time, features): {example_labels.shape}')
 
+	# Build the desired model
 	model = None
 	if mission.modelToUse == 'LINEAR':
 		model = buildLinearModel("is_" in mission.predictedVariable, agg_interval)
@@ -65,16 +67,29 @@ def exploreModel(mission, trainingEpochs = 20):
 	if mission.modelToUse == 'RNN':
 		model = buildLSTMModel("is_" in mission.predictedVariable, agg_interval)
 
-	model.fit(wg.train, validation_data = wg.val, epochs = trainingEpochs)	
+	# Configure early stopping so we don't learn the training data too well at the expense of test/validation data (overfit)
+	#	(use different criteria for Classification and Regression)
+	if "is_" in mission.predictedVariable:
+		esCallback = tf.keras.callbacks.EarlyStopping(monitor='val_recall', mode="max", patience=10, min_delta = 0.005, restore_best_weights = True)
+	else:
+		esCallback = tf.keras.callbacks.EarlyStopping(monitor='val_root_mean_squared_error', mode="min", patience=10, min_delta = 0.001, restore_best_weights = True)
+
+	# NOTE: provide the Validation Dataset so that the Model does not check itself on Train	
+	model.fit(wg.train, validation_data = wg.val, callbacks = [esCallback], epochs = 1000)	
 
 	eval_func = evaluateClassificationModel if "is_" in mission.predictedVariable else evaluateRegressionModel
+	
+	#_is_clear variable has a special aggregation rule
+	options = []
+	if mission.predictedVariable == '_is_clear':
+		options.append("TrueIfAllTrue")
 
 	print("\r\n- Performance on *TRAINING* data ({}):".format(mission))
-	eval_func(model, wg.train)
+	eval_func(model, wg.train, options)
 	print("\r\n- Performance on *VALIDATION* data ({}):".format(mission))
-	eval_func(model, wg.val)
+	eval_func(model, wg.val, options)
 	print("\r\n- Performance on *TEST* data ({}):".format(mission))
-	return eval_func(model, wg.test)
+	return eval_func(model, wg.test, options)
 
 #======================================================================
 def buildFeatureSet(targetLocationFile, adjacentLocationFiles, predictedVariable, featuresToUse):
@@ -97,6 +112,12 @@ def buildFeatureSet(targetLocationFile, adjacentLocationFiles, predictedVariable
 	# DATA column is of no use in the modelling stage
 	merged_df = merged_df.drop(columns=['DATE'])
 	return merged_df
+
+#======================================================================
+def aggregateQuantities(df, ahiDict):
+	df = df.reset_index()
+
+	return df
 
 #======================================================================
 def dropUnusedColumns(df, predictedVariable, featuresToUse):
@@ -136,9 +157,13 @@ def normalizeData(trainDf, valDf,  testDf, predictedVariable, featuresToUse, adj
 #======================================================================
 class WindowGenerator():
 
-	def __init__(self, input_width, label_width, shift,
-	           train_df, val_df, test_df,
-	           label_columns=None):
+	def __init__(self, 
+		input_width, # Lookback Window (hours into the past to base predictions on)
+		label_width, # Aggregation Interval (how many hours of data we'll be predicting)
+		shift, # How many hours in advance we'll be predicting
+	    train_df, val_df, test_df, # Training, Validation and Testing sets
+	    label_columns=None):
+		
 		# Store the raw data.
 		self.train_df = train_df
 		self.val_df = val_df
@@ -229,27 +254,28 @@ class WindowGenerator():
 #======================================================================
 #======================================================================
 
-def evaluateClassificationModel(model, testSet):
+def evaluateClassificationModel(model, testSet, options = []):
 
 	predicted_labels =(model.predict(testSet, verbose = 1) > 0.5).astype("int32")
-	#predicted_labels =  np.concatenate([y for y in predicted_labels], axis=0)
 	true_labels = np.concatenate([y for x, y in testSet], axis=0)
 
 	assert len(predicted_labels) == len (true_labels)
 
-	# We are forecasting for a number of hours: aggregate each forecast series using the "True iff 1 or more is True" rule
+	# We are forecasting for a number of hours: 
+	# aggregate each forecast series using the "True iff 1 or more is True" rule (default) or
+	# "True iff all True" (option specified)
 	predicted_agg = []
 	true_agg = []
 	for i in range(0, len(predicted_labels)):
 		predicted_i = predicted_labels[i].flatten()
 		true_i = true_labels[i].flatten()
 
-		predicted_i_agg = 1 if sum(predicted_i) > 0 else 0
-		true_i_agg = 1 if sum(true_i) > 0 else 0
-
-		#print("{} => {}".format(predicted_i, predicted_i_agg))
-		#print("{} => {}".format(true_i, true_i_agg))
-		#print("----")
+		if not "TrueIfAllTrue" in options:
+			predicted_i_agg = 1 if sum(predicted_i) > 0 else 0
+			true_i_agg = 1 if sum(true_i) > 0 else 0
+		else:
+			predicted_i_agg = 1 if sum(predicted_i) == len(predicted_i) else 0
+			true_i_agg = 1 if sum(true_i) == len(true_i) else 0
 
 		predicted_agg.append(predicted_i_agg)
 		true_agg.append(true_i_agg)
@@ -269,9 +295,8 @@ def evaluateClassificationModel(model, testSet):
 		"MCC:": mcc
 	}	
 
-def evaluateRegressionModel(model, testSet):
+def evaluateRegressionModel(model, testSet, options=[]):
 	predicted_values = model.predict(testSet)
-	#predicted_values = np.concatenate([y for y in predicted_values], axis=0)
 	true_values = np.concatenate([y for x, y in testSet], axis=0)
 
 	assert len(predicted_values) == len (true_values)
@@ -283,10 +308,6 @@ def evaluateRegressionModel(model, testSet):
 		true_i = true_values[i].flatten()
 
 		predicted_i_agg, true_i_agg = np.mean(predicted_i), np.mean(true_i)
-		#print("True: {} => {}".format(true_i, true_i_agg))
-		#print("Predicted: {} => {}".format(predicted_i, predicted_i_agg))
-		#print("-------\r\n\r\n")
-
 		predicted_agg.append(predicted_i_agg)
 		true_agg.append(true_i_agg)
 
@@ -305,10 +326,10 @@ def evaluateRegressionModel(model, testSet):
 
 # https://www.statology.org/mape-python/
 def calcMape(actual, pred): 
-    actual, pred = np.array(actual), np.array(pred) 
-    actual[actual == 0] = 0.1 # A meh hack to avoid division by 0
+	actual, pred = np.array(actual), np.array(pred) 
+	actual[abs(actual )< 0.1] = 0.1 # A meh hack to avoid division by 0
 
-    return np.mean(np.abs((actual - pred) / actual )) * 100 
+	return np.mean(np.abs((actual - pred) / actual )) * 100
 
 # https://kodify.net/python/math/truncate-decimals/	
 def truncate(number, decimals=0):
@@ -327,7 +348,7 @@ def truncate(number, decimals=0):
 
 #=====================================================================
 def buildLinearModel(isBinary, label_width):
-	_activation, _loss = getActivationAndLoss(isBinary)
+	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	model = tf.keras.Sequential([
 	 	# Take the last time-step.
     	# Shape [batch, time, features] => [batch, 1, features]
@@ -335,71 +356,75 @@ def buildLinearModel(isBinary, label_width):
 
 	    tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
 	    tf.keras.layers.Reshape([label_width, 1]),
+	    tf.keras.layers.Lambda(lambda x: tf.reduce_mean(x, 2)),
+	    tf.keras.layers.Reshape([label_width, 1]),
 	])
-	model.compile(loss=_loss, optimizer='adam', metrics = [keras.metrics.BinaryAccuracy(name='accuracy')])
+	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
 	return model
 
 
 def buildSimpleNNModel(isBinary, label_width):
-	_activation, _loss = getActivationAndLoss(isBinary)
+	_activation, _loss, _metrics  = getActivationLossAndMetrics(isBinary)
 
 	model = tf.keras.Sequential([
      # Take the last time step.
      # Shape [batch, time, features] => [batch, 1, features]
-     tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-     tf.keras.layers.Dense(units=500, activation='relu'),
+     #tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
+     tf.keras.layers.Flatten(),
+
+     tf.keras.layers.Dense(units=400, activation='relu'),
      tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
      # Add back the time dimension.
      # Shape: (outputs) => (1, outputs)
      tf.keras.layers.Reshape([label_width, 1]),
 	])
-	model.compile(loss=_loss, optimizer='adam', metrics = [keras.metrics.BinaryAccuracy(name='accuracy')])
+	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
 	return model
 
 def buildDNNModel(isBinary, label_width):
-	_activation, _loss = getActivationAndLoss(isBinary)
+	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 
 	model = tf.keras.Sequential([
      # Take the last time step.
      # Shape [batch, time, features] => [batch, 1, features]
      tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-     tf.keras.layers.Dense(units=500, activation='relu'),
-     tf.keras.layers.Dense(units=500, activation='relu'),
+     
+     tf.keras.layers.Dense(units=400, activation='relu'),
+     tf.keras.layers.Dense(units=200, activation='relu'),
+
      tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
      # Add back the time dimension.
      # Shape: (outputs) => (1, outputs)
      tf.keras.layers.Reshape([label_width, 1]),
 	])
-	model.compile(loss=_loss, optimizer='adam', metrics = [keras.metrics.BinaryAccuracy(name='accuracy')])
+	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
 	return model
 
 def buildConvModel(isBinary, lookbackHours, label_width):
-	_activation, _loss = getActivationAndLoss(isBinary)
+	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	CONV_WIDTH = 4
 
 	model = tf.keras.Sequential([
 		# Shape [batch, time, features] => [batch, CONV_WIDTH, features]
     	tf.keras.layers.Lambda(lambda x: x[:, -CONV_WIDTH:, :]),
 
-	    tf.keras.layers.Conv1D(filters=250,
+	    tf.keras.layers.Conv1D(filters=100,
 	                           kernel_size=(CONV_WIDTH),
 	                           activation='relu'),
-	    tf.keras.layers.Dense(units=250, activation='relu'),
+	    #tf.keras.layers.Dense(units=100, activation='relu'),
 	    tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
 	    tf.keras.layers.Reshape([label_width, 1]),
 	])
 
-	model.compile(loss=_loss, optimizer='adam', metrics = ['accuracy'])
+	model.compile(loss=_loss, optimizer='adam', metrics = [_metrics])
 	return model
 
 def buildLSTMModel(isBinary, label_width):
-	_activation, _loss = getActivationAndLoss(isBinary)
+	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	model = tf.keras.models.Sequential([
 
 		# Shape [batch, time, features] => [batch, lstm_units]
-    	tf.keras.layers.LSTM(32, return_sequences=True),
-    	tf.keras.layers.LSTM(32, return_sequences=False),
-    	# TODO - understand this a little better
+    	tf.keras.layers.LSTM(16, return_sequences=False),
 
     	# Shape => [batch, time, features]
     	tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
@@ -407,14 +432,15 @@ def buildLSTMModel(isBinary, label_width):
 	])
 
 
-	model.compile(loss=_loss, optimizer='adam', metrics = ['accuracy'])
+	model.compile(loss=_loss, optimizer='adam', metrics = [_metrics])
 	return model
 
-def getActivationAndLoss(isBinary):
-	activation, loss = "linear", 'mean_absolute_error'
+def getActivationLossAndMetrics(isBinary):
+	activation, loss, metrics = "linear", 'mean_squared_error', [ tf.keras.metrics.RootMeanSquaredError()]
 	if isBinary:
-		activation, loss = "sigmoid", "binary_crossentropy"
-	return activation, loss
+		activation, loss, metrics = "sigmoid", tf.keras.losses.BinaryCrossentropy(), [tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
+
+	return activation, loss, metrics
 
 #======================================================================
 # Organizing class to encapsulate learning task parameters
@@ -450,25 +476,34 @@ featureDict = {'Temp' : ['_day_sin', '_day_cos', '_hour_sin', '_hour_cos', '_clo
 			   '_is_precip': ['_cloud_intensity', 'CloudAltitude', 'Humidity', 'Temp', 'Precipitation', '_is_snow', '_is_thunder',  'WindSpeed', '_wind_dir_sin', '_wind_dir_cos'],
 			   '_is_cloudy': ['_cloud_intensity', 'CloudAltitude', 'Humidity', 'Temp', 'Precipitation', '_is_mist',  'WindSpeed', '_wind_dir_sin', '_wind_dir_cos']}
 
+allFeatures = ['_day_sin', '_day_cos', '_hour_sin', '_hour_cos', 
+	'Temp', 'DewPoint', 'Humidity', 'Precipitation', 'Pressure', 'PressureChange', '_cloud_intensity', 'CloudAltitude', 'WindSpeed', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', 'Visibility',
+	'_is_precip', '_is_clear', '_is_snow', '_is_thunder']
+
 ahiDict = {'Temp' : 1,
 		   'WindSpeed': 2,
 		   '_is_precip': 3,
-		   '_is_cloudy': 3
+		   '_is_clear': 3,
+		   '_is_thunder': 4,
+		   '_is_snow' : 3 
 		   }
 
 learningMissions = []
-for var in ['WindSpeed']:
-	for predictionHrs in [6, 18, 24]:
-		for modelType in ['LINEAR', 'NN', 'DNN', 'CNN']:
+for var in ['_is_clear']:
+	for predictionHrs in [12]:
+		for modelType in ['NN']:
+			all_features = allFeatures.copy()
+			all_features.remove(var)
 			lm = LearningMission(targetLocation = '../processed-data/noaa_2011-2020_chicago_PREPROC.csv',
 								 adjacentLocations = ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', 
 								 					  '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv',
 								 					  '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv',
-								 					  '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv'],
+								 					  '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv',
+								 					  '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv', '../processed-data/noaa_2011-2020_toledo_PREPROC.csv'],
 								 predictedVariable = var,
-								 featuresToUse = featureDict[var],
+								 featuresToUse = all_features,
 								 lookAheadHrs = predictionHrs,
-								 lookBackHours = 12,
+								 lookBackHours = 4,
 								 aggHalfInterval = ahiDict[var],
 								 modelToUse = modelType
 		 					    )
@@ -478,12 +513,20 @@ for var in ['WindSpeed']:
 
 summaries = []
 for mission in learningMissions:
-	evaluation = exploreModel(mission, 75)
+	evaluation = exploreModel(mission)
 	summaries.append(["{}".format(mission), evaluation])
 
-print("=================\r\n")
-for summary in summaries:
-	print(summary[0])
-	print(summary[1])
 	print("=================\r\n")
+	for summary in summaries:
+		print(summary[0])
+		print(summary[1])
+		print("=================\r\n")	
 
+#NOTES on is_precip and is_clear:
+#  DNN, CNN and RNN were not shown to benefit the model
+#  _is_clear is handled about as well by LINEAR as it is by NN, except at 6h
+#  _is_precip is very considerably improved by using NN over LINEAR
+#  _WindSpeed seems to be improved by NN only marginally
+#  _Temp seems to be moderately improved by NN at shorter forecast intervals
+
+# NOTE on lookback window: it seems to have no benefit to extend it beyond 1h. So looks like history of weather is of no help in predicting it
