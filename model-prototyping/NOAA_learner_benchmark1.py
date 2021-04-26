@@ -350,13 +350,16 @@ def truncate(number, decimals=0):
 def buildLinearModel(isBinary, label_width):
 	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	model = tf.keras.Sequential([
-	 	# Use all time steps
-    	tf.keras.layers.Flatten(),
+	
+	# Use all time steps
+	tf.keras.layers.Flatten(),
 
-	    tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
-	    tf.keras.layers.Reshape([label_width, 1]),
+	tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
+	tf.keras.layers.Reshape([label_width, 1]),
+
 	])
 	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
+
 	return model
 
 
@@ -364,8 +367,8 @@ def buildSimpleNNModel(isBinary, label_width):
 	_activation, _loss, _metrics  = getActivationLossAndMetrics(isBinary)
 
 	model = tf.keras.Sequential([
-		 # Use all time steps
-    	tf.keras.layers.Flatten(),
+		# Use all time steps
+		tf.keras.layers.Flatten(),
 
 		tf.keras.layers.Dense(units=400, activation='relu'),
 		tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
@@ -388,7 +391,7 @@ def buildDNNModel(isBinary, label_width):
 		tf.keras.layers.Dense(units=200, activation='relu'),
 
 		tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
-		
+
 		# Add back the time dimension.
 		# Shape: (outputs) => (1, outputs)
 		tf.keras.layers.Reshape([label_width, 1]),
@@ -402,15 +405,15 @@ def buildConvModel(isBinary, lookbackHours, label_width):
 
 	model = tf.keras.Sequential([
 		# Shape [batch, time, features] => [batch, CONV_WIDTH, features]
-    	tf.keras.layers.Lambda(lambda x: x[:, -CONV_WIDTH:, :]),
+		tf.keras.layers.Lambda(lambda x: x[:, -CONV_WIDTH:, :]),
 
-	    tf.keras.layers.Conv1D(filters=200,
-	                           kernel_size=(CONV_WIDTH),
-	                           activation='relu'),
-	    #tf.keras.layers.Dense(units=100, activation='relu'),
-	    tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
-	    tf.keras.layers.Reshape([label_width, 1]),
-	])
+		tf.keras.layers.Conv1D(filters=200,
+		                       kernel_size=(CONV_WIDTH),
+		                       activation='relu'),
+		#tf.keras.layers.Dense(units=100, activation='relu'),
+		tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
+		tf.keras.layers.Reshape([label_width, 1]),
+		])
 
 	model.compile(loss=_loss, optimizer='adam', metrics = [_metrics])
 	return model
@@ -418,15 +421,13 @@ def buildConvModel(isBinary, lookbackHours, label_width):
 def buildLSTMModel(isBinary, label_width):
 	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	model = tf.keras.models.Sequential([
-
 		# Shape [batch, time, features] => [batch, lstm_units]
-    	tf.keras.layers.LSTM(16, return_sequences=False),
+		tf.keras.layers.LSTM(16, return_sequences=False),
 
-    	# Shape => [batch, time, features]
-    	tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
-    	tf.keras.layers.Reshape([label_width, 1]),
+		# Shape => [batch, time, features]
+		tf.keras.layers.Dense(units=label_width, activation=_activation, kernel_initializer=tf.initializers.zeros()),
+		tf.keras.layers.Reshape([label_width, 1]),
 	])
-
 
 	model.compile(loss=_loss, optimizer='adam', metrics = [_metrics])
 	return model
