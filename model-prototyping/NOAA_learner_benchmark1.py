@@ -350,14 +350,10 @@ def truncate(number, decimals=0):
 def buildLinearModel(isBinary, label_width):
 	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 	model = tf.keras.Sequential([
-	 	# Take the last time-step.
-    	# Shape [batch, time, features] => [batch, 1, features]
-    	#tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
+	 	# Use all time steps
     	tf.keras.layers.Flatten(),
 
 	    tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
-	    tf.keras.layers.Reshape([label_width, 1]),
-	    tf.keras.layers.Lambda(lambda x: tf.reduce_mean(x, 2)),
 	    tf.keras.layers.Reshape([label_width, 1]),
 	])
 	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
@@ -368,16 +364,15 @@ def buildSimpleNNModel(isBinary, label_width):
 	_activation, _loss, _metrics  = getActivationLossAndMetrics(isBinary)
 
 	model = tf.keras.Sequential([
-     # Take the last time step.
-     # Shape [batch, time, features] => [batch, 1, features]
-     #tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-     tf.keras.layers.Flatten(),
+		 # Use all time steps
+    	tf.keras.layers.Flatten(),
 
-     tf.keras.layers.Dense(units=400, activation='relu'),
-     tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
-     # Add back the time dimension.
-     # Shape: (outputs) => (1, outputs)
-     tf.keras.layers.Reshape([label_width, 1]),
+		tf.keras.layers.Dense(units=400, activation='relu'),
+		tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
+
+		# Add back the time dimension.
+		# Shape: (outputs) => (1, outputs)
+		tf.keras.layers.Reshape([label_width, 1]),
 	])
 	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
 	return model
@@ -386,18 +381,17 @@ def buildDNNModel(isBinary, label_width):
 	_activation, _loss, _metrics = getActivationLossAndMetrics(isBinary)
 
 	model = tf.keras.Sequential([
-     # Take the last time step.
-     # Shape [batch, time, features] => [batch, 1, features]
-     #tf.keras.layers.Lambda(lambda x: x[:, -1:, :]),
-     tf.keras.layers.Flatten(),
+		 # Use all time steps
+		tf.keras.layers.Flatten(),
 
-     tf.keras.layers.Dense(units=400, activation='relu'),
-     tf.keras.layers.Dense(units=200, activation='relu'),
+		tf.keras.layers.Dense(units=400, activation='relu'),
+		tf.keras.layers.Dense(units=200, activation='relu'),
 
-     tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
-     # Add back the time dimension.
-     # Shape: (outputs) => (1, outputs)
-     tf.keras.layers.Reshape([label_width, 1]),
+		tf.keras.layers.Dense(units=label_width, activation = _activation, kernel_initializer=tf.initializers.zeros()),
+		
+		# Add back the time dimension.
+		# Shape: (outputs) => (1, outputs)
+		tf.keras.layers.Reshape([label_width, 1]),
 	])
 	model.compile(loss=_loss, optimizer='adam', metrics = _metrics)
 	return model
