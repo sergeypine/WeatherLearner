@@ -1,0 +1,38 @@
+ANALYSIS COMPLETE, RESULTS:
+
+FEATURES:
+TARGET _is_clear+6H => ['_day_cos', 'DewPoint', '_cloud_intensity', 'CloudAltitude', '_is_thunder']
+TARGET _is_clear+12H => ['_day_cos', 'Temp', 'PressureChange', '_cloud_intensity', 'CloudAltitude', '_wind_dir_sin', '_is_precip']
+TARGET _is_clear+18H => ['_day_cos', '_hour_cos', 'Temp', 'Pressure', 'PressureChange', 'WindSpeed', '_wind_dir_sin']
+TARGET _is_clear+24H => ['_day_cos', 'Temp', 'Pressure', 'PressureChange']
+TARGET _is_precip+6H => ['_hour_sin', 'DewPoint']
+TARGET _is_precip+12H => ['Precipitation', 'Pressure', 'CloudAltitude', 'WindSpeed', 'WindGust', '_is_clear', '_is_thunder']
+TARGET _is_precip+18H => ['_day_cos', 'Temp', 'Pressure', 'PressureChange', '_cloud_intensity', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', 'Visibility', '_is_clear', '_is_thunder']
+TARGET _is_precip+24H => ['_day_cos', 'Temp', 'Humidity', 'Pressure', 'PressureChange', '_cloud_intensity', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', 'Visibility', '_is_snow', '_is_thunder']
+TARGET Temp+6H => ['_hour_sin', 'DewPoint', 'Humidity', 'PressureChange', '_cloud_intensity', '_is_thunder']
+TARGET Temp+12H => ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust']
+TARGET Temp+18H => ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust', '_wind_dir_sin', '_is_thunder']
+TARGET Temp+24H => ['DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed', '_wind_dir_cos']
+TARGET WindSpeed+6H => ['_hour_sin', '_hour_cos', 'Humidity', 'Pressure', 'PressureChange']
+TARGET WindSpeed+12H => ['_day_cos', '_hour_sin', '_hour_cos', 'DewPoint', 'Humidity', 'Pressure', 'PressureChange', 'CloudAltitude', 'WindGust', '_wind_dir_sin', '_wind_dir_cos']
+TARGET WindSpeed+18H => ['_day_cos', '_hour_sin', 'Temp', 'PressureChange', '_cloud_intensity', 'CloudAltitude']
+TARGET WindSpeed+24H => ['_day_cos', '_hour_sin', 'Humidity', 'Precipitation', 'PressureChange', 'WindGust', '_wind_dir_cos', '_is_thunder']
+
+
+LOCATIONS:
+TARGET _is_clear+6H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv']
+TARGET _is_clear+12H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv']
+TARGET _is_clear+18H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_columbus_PREPROC.csv']
+TARGET _is_clear+24H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET _is_precip+6H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET _is_precip+12H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv']
+TARGET _is_precip+18H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv']
+TARGET _is_precip+24H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_green-bay_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET Temp+6H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv']
+TARGET Temp+12H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET Temp+18H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv']
+TARGET Temp+24H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_columbus_PREPROC.csv']
+TARGET WindSpeed+6H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv', '../processed-data/noaa_2011-2020_lansing_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET WindSpeed+12H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv', '../processed-data/noaa_2011-2020_indianapolis_PREPROC.csv']
+TARGET WindSpeed+18H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_madison_PREPROC.csv', '../processed-data/noaa_2011-2020_st-louis_PREPROC.csv']
+TARGET WindSpeed+24H => ['../processed-data/noaa_2011-2020_cedar-rapids_PREPROC.csv', '../processed-data/noaa_2011-2020_des-moines_PREPROC.csv', '../processed-data/noaa_2011-2020_rochester_PREPROC.csv', '../processed-data/noaa_2011-2020_quincy_PREPROC.csv']

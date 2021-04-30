@@ -370,7 +370,7 @@ class PredictionTarget():
 		self.predictionInterval = predictionInterval
 
 	def __repr__(self):
-		return "TARGET {}+{}H".format(var, predictionHrs)
+		return "TARGET {}+{}H".format(self.var, self.predictionInterval)
 
 
 #======================================================================
@@ -429,11 +429,11 @@ for var in [ '_is_clear', '_is_precip', 'Temp', 'WindSpeed']:
 								 modelToUse = 'NN'
 		 					    )
 			new_performance = exploreModel(lm)
-			if (new_performance > current_performance) and (new_performance - current_performance >= 0.002):
+			if (new_performance > current_performance):
+				print(">>{}, ACCEPTED feature {} (old performance = {}, new performance = {})".format(prediction_target, feature, current_performance, new_performance))
 				current_performance = new_performance
-				print(">>{}, ACCEPTED feature {}".format(prediction_target, feature))
 			else:
-				print(">>{}, REJECTED feature {}".format(prediction_target, feature))
+				print(">>{}, REJECTED feature {} (old performance = {}, new performance = {})".format(prediction_target, feature, current_performance, new_performance))
 				selected_features.remove(feature)
 
 		prediction_target_features[prediction_target] = selected_features
@@ -464,11 +464,11 @@ for var in [ '_is_clear', '_is_precip', 'Temp', 'WindSpeed']:
 								 modelToUse = 'NN'
 		 					    )
 			new_performance = exploreModel(lm)
-			if (new_performance > current_performance) and (new_performance - current_performance >= 0.002):
+			if (new_performance > current_performance):
+				print(">>{}, ACCEPTED location {} (old performance = {}, new performance = {})".format(prediction_target, location, current_performance, new_performance))
 				current_performance = new_performance
-				print(">>{}, ACCEPTED location {}".format(prediction_target, location))
 			else:
-				print(">>{}, REJECTED location {}".format(prediction_target, location))
+				print(">>{}, REJECTED location {} (old performance = {}, new performance = {})".format(prediction_target, location, current_performance, new_performance))
 				selected_locations.remove(location)
 
 		prediction_target_locations[prediction_target] = selected_locations
