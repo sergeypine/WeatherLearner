@@ -94,7 +94,6 @@ def preprocFile(filePath):
 	################################################################################
 
 	# Summarize Sky Condition in non-categorical format
-	#agg_df['_is_clear'], agg_df['_cloud_intensity'] = zip(*agg_df[['CloudCondition']].apply(deriveSkyConditionVars))
 	agg_df['_is_clear'], agg_df['_cloud_intensity'] = zip(*agg_df.apply(lambda row: deriveSkyConditionVars(row['CloudCondition'], row['WeatherType']), axis=1))
 
 	# Summarize Weather Type in non-categorical format
@@ -191,7 +190,7 @@ def preprocSkyConditions(skyCondition):
 		except ValueError:
 			height = 1
 	else:
-		height = 20000 #If it's clear, assume clouds are very very high
+		height = 30000 #If it's clear, assume clouds are very very high
 	
 	return cover, height
 
@@ -213,14 +212,14 @@ conditionIntensityMap = {
 	"PartlyCloudy" : 2,
 	"MostlyCloudy": 4,
 	"Cloudy": 5,
-	"Obscured": 5
+	"Obscured": 6
 }
 def deriveSkyConditionVars(skyCondition, weatherType):
 	is_clear = 0
 	cloud_intensity = 0
 
-	# We consider the weather "Clear" if there are few clouds and no mist or fog
-	if (skyCondition == "Clear" or skyCondition == "MostlyClear" or skyCondition == "PartlyCloudy") and ('Fog' not in weatherType and 'Mist' not in weatherType):
+	# We consider the weather "Clear" if sky cover is "PartlyCloudy" or less, AND if it's not foggy/misty
+	if (skyCondition in ['Clear', 'MostlyClear', 'PartlyCloudy']) and ('Fog' not in weatherType and 'Mist' not in weatherType):
 		is_clear = 1
 
 	cloud_intensity = conditionIntensityMap[skyCondition]	
@@ -316,11 +315,13 @@ def deriveWeatherTypeVars(weatherType):
 
 #########################################################
 def getPreprocFileName(filePath):
-	return filePath.replace('.csv', '_PREPROC.csv')
+	filePath =  filePath.replace('.csv', '_PREPROC.csv')
+	filePath = filePath.replace("raw-data", "processed-data")
+	return filePath
 
-files_to_preproc = ['../NOAA/noaa_2011-2020_chicago.csv',  '../NOAA/noaa_2011-2020_columbus.csv', '../NOAA/noaa_2011-2020_des-moines.csv', '../NOAA/noaa_2011-2020_st-louis.csv',  
-'../NOAA/noaa_2011-2020_rochester.csv', '../NOAA/noaa_2011-2020_madison.csv',  '../NOAA/noaa_2011-2020_quincy.csv', '../NOAA/noaa_2011-2020_cedar-rapids.csv', 
-'../NOAA/noaa_2011-2020_green-bay.csv', '../NOAA/noaa_2011-2020_indianapolis.csv',  '../NOAA/noaa_2011-2020_lansing.csv', '../NOAA/noaa_2011-2020_toledo.csv']
+files_to_preproc = ['../raw-data/noaa_2011-2020_chicago.csv',  '../raw-data/noaa_2011-2020_columbus.csv', '../raw-data/noaa_2011-2020_des-moines.csv', '../raw-data/noaa_2011-2020_st-louis.csv',  
+'../raw-data/noaa_2011-2020_rochester.csv', '../raw-data/noaa_2011-2020_madison.csv',  '../raw-data/noaa_2011-2020_quincy.csv', '../raw-data/noaa_2011-2020_cedar-rapids.csv', 
+'../raw-data/noaa_2011-2020_green-bay.csv', '../raw-data/noaa_2011-2020_indianapolis.csv',  '../raw-data/noaa_2011-2020_lansing.csv', '../raw-data/noaa_2011-2020_toledo.csv']
 
 preproc_count = 0
 for file_to_preproc in files_to_preproc:
