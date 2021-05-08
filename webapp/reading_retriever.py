@@ -45,7 +45,14 @@ def download_loc_data(location_code):
 
     column_names = ['Time', 'Temp', 'DewPoint', 'Humidity', 'Wind', 'WindSpeed', 'WindGust', 'Pressure', 'Precip',
                     'Condition']
-    return pd.DataFrame(hourly_data[0], columns=column_names)
+    loc_data = pd.DataFrame(hourly_data[0], columns=column_names)
+
+    i = 1
+    while i < len(hourly_data):
+        loc_data = pd.concat([loc_data, pd.DataFrame(hourly_data[i], columns=column_names)])
+        i = i + 1
+
+    return loc_data
 
 
 def loc_data_to_noo_format(loc_data: pd.DataFrame):
@@ -62,7 +69,7 @@ def loc_data_to_noo_format(loc_data: pd.DataFrame):
 
     # Drop in from Pressure and Precip
     loc_data['Pressure'] = loc_data['Pressure'].str.replace(' in', '')
-    loc_data['Precip'] = loc_data['Precip'].str.replace(' in', '')
+    loc_data['Precipitation'] = loc_data['Precip'].str.replace(' in', '')
 
     # Transform wind direction into 3 components: Northerly, Easterly and is_var
     loc_data['_wind_dir_sin'], loc_data['_wind_dir_cos'] = zip(
@@ -102,7 +109,7 @@ def loc_data_to_noo_format(loc_data: pd.DataFrame):
     cleaned_df['_hour_cos'] = np.cos(2 * np.pi * cleaned_df['DATE'].dt.hour / 24)
 
     # Shed the unnecessary columns
-    cleaned_df = cleaned_df.drop(columns=['Time', 'Condition', 'Wind'])
+    cleaned_df = cleaned_df.drop(columns=['Time', 'Condition', 'Wind', 'Precip'])
     return cleaned_df
 
 

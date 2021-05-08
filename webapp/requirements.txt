@@ -1,3 +1,8 @@
-Flask
-Tensorflow
-pandas
+Flask~=1.1.2
+Tensorflow~=2.4.1
+pandas~=1.2.4
+
+numpy~=1.19.4
+pytz~=2019.3
+selenium~=3.141.0
+beautifulsoup4~=4.8.2

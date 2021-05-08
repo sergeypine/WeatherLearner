@@ -3,6 +3,7 @@ from flask import Flask
 import config
 from logging.config import dictConfig
 import reading_retriever
+import predictor
 
 # ===============================================================
 app = Flask(__name__)
@@ -28,5 +29,6 @@ dictConfig({
 # ===========================================================
 @app.route('/')
 def home():
-    reading_retriever.retrieve_latest_readings()
+    #reading_retriever.retrieve_latest_readings()
+    predictor.generate_predictions()
     return "Hello World"
