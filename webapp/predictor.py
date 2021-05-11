@@ -6,9 +6,12 @@ from flask import current_app
 from tensorflow import keras
 import pandas as pd
 import numpy as np
-import window_generator
+import forecast_commons
+import json
 import itertools
+
 numpy.set_printoptions(threshold=sys.maxsize)
+
 
 def generate_predictions():
     predictions = {}
@@ -18,9 +21,10 @@ def generate_predictions():
             prediction_target.var, prediction_target.lookahead))
 
         # Get a Dataframe with data for locations and feature vars that are relevant to this prediction target
-        featureset = build_feature_set(prediction_target)
+        featureset = forecast_commons.build_feature_set(prediction_target, "readings/{}.csv")
 
-        # TODO - Normalize it!
+        # Normalize Data
+        featureset = forecast_commons.normalize_data(featureset, prediction_target, *load_mean_and_std(prediction_target))
 
         # Load the right model for this prediction
         model = load_target_model(prediction_target)
@@ -36,37 +40,8 @@ def generate_predictions():
         ))
 
 
-def build_feature_set(prediction_target):
-    target_df = load_location_readings(current_app.config['TARGET_LOCATION'])
-    target_df = drop_unused_columns(target_df, prediction_target)
-    merged_df = target_df
-    suffix_no = 1
-
-    # Merge adjacent location files one by one relying on DATA
-    for adjacent_location in current_app.config['PREDICTION_TARGET_LOCATIONS'][prediction_target]:
-        adjacent_df = load_location_readings(adjacent_location)
-        adjacent_df = drop_unused_columns(adjacent_df, prediction_target)
-
-        # Take control of column name suffix in the dataset being merged in
-        adjacent_df = adjacent_df.add_suffix(str(suffix_no))
-        adjacent_df = adjacent_df.rename(columns={"DATE{}".format(suffix_no): 'DATE'})
-        merged_df = pd.merge(merged_df, adjacent_df, on='DATE')
-        suffix_no = suffix_no + 1
-
-    # DATA column is of no use in the modelling stage
-    merged_df = merged_df.drop(columns=['DATE'])
-
-    # Remove all rows except for the ones needed to make prediction (last lookback hours rows)
-    merged_df = merged_df.tail(current_app.config['PREDICTION_TARGET_LOOKBACKS'][prediction_target])
-
-    # Add dummy rows up to lookahead time (WindowGenerator class needs to have rows for the forecast timeframe)
-    for _ in itertools.repeat(None, prediction_target.lookahead - current_app.config['PREDICTED_VARIABLE_AHI'][prediction_target.var]):
-        merged_df = merged_df.append(pandas.Series(), ignore_index=True)
-    return merged_df
-
-
 def load_target_model(prediction_target):
-    model = keras.models.load_model("pretrained/{}_{}h.h5".format(prediction_target.var, prediction_target.lookahead))
+    model = keras.models.load_model(forecast_commons.get_model_file(prediction_target))
     current_app.logger.info("Loaded Model for var = {}, lookahead = {}hr".format(
         prediction_target.var, prediction_target.lookahead))
     current_app.logger.info(model.summary())
@@ -74,8 +49,15 @@ def load_target_model(prediction_target):
 
 
 def make_tensor(featureset, prediction_target):
+    # Remove all rows except for the ones needed to make prediction (last lookback hours rows)
+    featureset = featureset.tail(current_app.config['PREDICTION_TARGET_LOOKBACKS'][prediction_target])
+
+    # Add dummy rows up to lookahead time (WindowGenerator class needs to have rows for the forecast timeframe)
+    for _ in itertools.repeat(None, prediction_target.lookahead - current_app.config['PREDICTED_VARIABLE_AHI'][prediction_target.var]):
+        featureset = featureset.append(pd.Series(), ignore_index=True)
+
     agg_interval = 2 * current_app.config['PREDICTED_VARIABLE_AHI'][prediction_target.var] + 1
-    wg = window_generator.WindowGenerator(
+    wg = forecast_commons.WindowGenerator(
         input_width=current_app.config['PREDICTION_TARGET_LOOKBACKS'][prediction_target],
         label_width=agg_interval,
         shift=prediction_target.lookahead - current_app.config['PREDICTED_VARIABLE_AHI'][prediction_target.var],
@@ -89,7 +71,7 @@ def make_tensor(featureset, prediction_target):
 
 
 def predict(prediction_target, model_tensor, model):
-    predictions =  None
+    predictions = None
     agg_rule = current_app.config['PREDICTED_VARIABLE_AGG_RULES'][prediction_target.var]
     if agg_rule in ['ALL', 'ANY']:
         predictions = (model.predict(model_tensor, verbose=1) > 0.5).astype("int32").flatten()
@@ -103,16 +85,9 @@ def predict(prediction_target, model_tensor, model):
     else:
         return np.mean(predictions)
 
-def drop_unused_columns(df, prediction_target):
-    features_to_use = current_app.config['PREDICTION_TARGET_FEATURES'][prediction_target]
-    all_columns = features_to_use.copy()
-    all_columns.append('DATE')
-    all_columns.append(prediction_target.var)
-    df = df[all_columns]
 
-    return df
-
-
-def load_location_readings(location):
-    loc_readings_df = pd.read_csv("readings/{}.csv".format(location))
-    return loc_readings_df
+def load_mean_and_std(prediction_target):
+    norm_file_name = forecast_commons.get_normalization_file(prediction_target)
+    with open(norm_file_name) as json_file:
+        mean_std_dict = json.load(json_file)
+        return mean_std_dict['MEAN'], mean_std_dict['STD']

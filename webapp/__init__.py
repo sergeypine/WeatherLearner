@@ -4,6 +4,7 @@ import config
 from logging.config import dictConfig
 import reading_retriever
 import predictor
+import trainer
 
 # ===============================================================
 app = Flask(__name__)
@@ -26,9 +27,16 @@ dictConfig({
     }
 })
 
+
 # ===========================================================
 @app.route('/')
 def home():
-    reading_retriever.retrieve_latest_readings()
+    # reading_retriever.retrieve_latest_readings()
     predictor.generate_predictions()
     return "Hello World"
+
+
+@app.route('/train')
+def train():
+    trainer.train_models()
+    return "Goodbye World"

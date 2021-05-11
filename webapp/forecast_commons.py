@@ -1,5 +1,16 @@
 import tensorflow as tf
 import numpy as np
+import pandas as pd
+from flask import current_app
+
+
+def get_normalization_file(prediction_target):
+    return "pretrained/{}_{}h_normalization.json".format(prediction_target.var, prediction_target.lookahead)
+
+
+def get_model_file(prediction_target):
+    return "pretrained/{}_{}h.h5".format(prediction_target.var, prediction_target.lookahead)
+
 
 # Mostly copy-paste of https://www.tensorflow.org/tutorials/structured_data/time_series
 class WindowGenerator():
@@ -83,3 +94,53 @@ class WindowGenerator():
     @property
     def test(self):
         return self.make_dataset(self.test_df)
+
+
+# =====================================================================
+# ======================================================================
+def build_feature_set(prediction_target, location_file_format_str):
+    target_df = load_location_readings(current_app.config['TARGET_LOCATION'], location_file_format_str)
+    target_df = drop_unused_columns(target_df, prediction_target)
+    merged_df = target_df
+    suffix_no = 1
+
+    # Merge adjacent location files one by one relying on DATA
+    for adjacent_location in current_app.config['PREDICTION_TARGET_LOCATIONS'][prediction_target]:
+        adjacent_df = load_location_readings(adjacent_location, location_file_format_str)
+        adjacent_df = drop_unused_columns(adjacent_df, prediction_target)
+
+        # Take control of column name suffix in the dataset being merged in
+        adjacent_df = adjacent_df.add_suffix(str(suffix_no))
+        adjacent_df = adjacent_df.rename(columns={"DATE{}".format(suffix_no): 'DATE'})
+        merged_df = pd.merge(merged_df, adjacent_df, on='DATE')
+        suffix_no = suffix_no + 1
+
+    # DATA column is of no use in the modelling stage
+    merged_df = merged_df.drop(columns=['DATE'])
+
+    return merged_df
+
+
+def load_location_readings(location, location_file_format_str):
+    loc_readings_df = pd.read_csv(location_file_format_str.format(location))
+    return loc_readings_df
+
+
+def drop_unused_columns(df, prediction_target):
+    features_to_use = current_app.config['PREDICTION_TARGET_FEATURES'][prediction_target]
+    all_columns = features_to_use.copy()
+    all_columns.append('DATE')
+    all_columns.append(prediction_target.var)
+    df = df[all_columns]
+
+    return df
+
+
+def normalize_data(featureset, prediction_target, mean, std):
+    columns_to_normalize = get_columns_to_normalize(featureset, prediction_target)
+    featureset[columns_to_normalize] = (featureset[columns_to_normalize] - mean) / std
+    return featureset
+
+
+def get_columns_to_normalize(featureset, prediction_target):
+    return featureset.columns.drop([prediction_target.var])
