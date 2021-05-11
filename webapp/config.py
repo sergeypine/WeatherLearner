@@ -33,8 +33,8 @@ class Config(object):
     TARGET_TIMEZONE = 'America/Chicago'
     MAX_LOOK_BACK_HOURS = 24
     # =========================================================
-    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_PRECIP_24H, PREDICTION_TARGET_IS_PRECIP_18H,
-                              PREDICTION_TARGET_IS_PRECIP_12H, PREDICTION_TARGET_IS_PRECIP_6H]
+    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_PRECIP_6H, PREDICTION_TARGET_IS_PRECIP_12H,
+                              PREDICTION_TARGET_IS_PRECIP_18H, PREDICTION_TARGET_IS_PRECIP_24H]
 
     PREDICTION_TARGET_FEATURES = {
         PREDICTION_TARGET_IS_PRECIP_6H: ['_hour_sin', 'DewPoint'],
@@ -71,6 +71,13 @@ class Config(object):
         '_is_clear': 3,
         'Temp': 1,
         'WindSpeed': 2,
+    }
+
+    PREDICTED_VARIABLE_AGG_RULES = {
+        '_is_precip': 'ANY',
+        '_is_clear': 'ALL',
+        'Temp': 'AVG',
+        'WindSpeed': 'AVG',
     }
     # =========================================================
 

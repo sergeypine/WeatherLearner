@@ -29,6 +29,6 @@ dictConfig({
 # ===========================================================
 @app.route('/')
 def home():
-    #reading_retriever.retrieve_latest_readings()
+    reading_retriever.retrieve_latest_readings()
     predictor.generate_predictions()
     return "Hello World"
