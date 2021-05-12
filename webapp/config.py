@@ -86,7 +86,7 @@ class Config(object):
         PREDICTION_TARGET_TEMP_12H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust'],
         PREDICTION_TARGET_TEMP_18H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust',
                                      '_wind_dir_sin', '_is_thunder'],
-        PREDICTION_TARGET_TEMP_24H: ['DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed',
+        PREDICTION_TARGET_TEMP_24H: ['_hour_sin', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed',
                                      '_wind_dir_cos'],
 
         PREDICTION_TARGET_WINDSPEED_6H: ['_hour_sin', '_hour_cos', 'Humidity', 'Pressure', 'PressureChange'],
