@@ -12,6 +12,10 @@ def get_model_file(prediction_target):
     return "pretrained/{}_{}h.h5".format(prediction_target.var, prediction_target.lookahead)
 
 
+def get_latest_predictions_file():
+    return "predictions/latest.csv"
+
+
 # Mostly copy-paste of https://www.tensorflow.org/tutorials/structured_data/time_series
 class WindowGenerator():
 
@@ -115,7 +119,7 @@ def build_feature_set(prediction_target, location_file_format_str):
         merged_df = pd.merge(merged_df, adjacent_df, on='DATE')
         suffix_no = suffix_no + 1
 
-    # DATA column is of no use in the modelling stage
+    # DATE column is of no use in the modelling stage
     merged_df = merged_df.drop(columns=['DATE'])
 
     return merged_df

@@ -65,7 +65,7 @@ def create_model(prediction_target, model_to_use):
                                                        min_delta=0.02, restore_best_weights=True)
 
     # NOTE: provide the Validation Dataset so that the Model does not check itself on Train
-    model.fit(wg.train, validation_data=wg.val, callbacks=[es_callback], epochs=1)
+    model.fit(wg.train, validation_data=wg.val, callbacks=[es_callback], epochs=100)
 
     return model, {'STD': train_std.tolist(), 'MEAN': train_mean.tolist()}
 

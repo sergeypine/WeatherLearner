@@ -6,6 +6,9 @@ class PredictionTarget():
         self.var = var
         self.lookahead = lookahead
 
+    def __repr__(self):
+        return "{}+{}hr".format(self.var, self.lookahead)
+
 
 PREDICTION_TARGET_IS_CLEAR_6H = PredictionTarget('_is_clear', 6)
 PREDICTION_TARGET_IS_CLEAR_12H = PredictionTarget('_is_clear', 12)
