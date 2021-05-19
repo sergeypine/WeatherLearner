@@ -30,7 +30,15 @@ PREDICTION_TARGET_WINDSPEED_12H = PredictionTarget('WindSpeed', 12)
 PREDICTION_TARGET_WINDSPEED_18H = PredictionTarget('WindSpeed', 18)
 PREDICTION_TARGET_WINDSPEED_24H = PredictionTarget('WindSpeed', 24)
 
+
 class Config(object):
+    # =========================================================
+    DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 2
+    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 1
+    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 60
+    DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
+    DATA_SERVICE_LOG_LEVEL = 'INFO'
+    DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
     # =========================================================
     LOCATION_CODES = {
         'Chicago': 'KMDW',
@@ -85,7 +93,8 @@ class Config(object):
         PREDICTION_TARGET_TEMP_12H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust'],
         PREDICTION_TARGET_TEMP_18H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust',
                                      '_wind_dir_sin', '_is_thunder'],
-        PREDICTION_TARGET_TEMP_24H: ['_hour_sin', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed',
+        PREDICTION_TARGET_TEMP_24H: ['_hour_sin', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity',
+                                     'WindSpeed',
                                      '_wind_dir_cos'],
 
         PREDICTION_TARGET_WINDSPEED_6H: ['_hour_sin', '_hour_cos', 'Humidity', 'Pressure', 'PressureChange'],
@@ -103,8 +112,8 @@ class Config(object):
         PREDICTION_TARGET_IS_CLEAR_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison',
                                          'St_Louis', 'Green_Bay'],
         PREDICTION_TARGET_IS_CLEAR_18H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Columbus'],
-        PREDICTION_TARGET_IS_CLEAR_24H:  ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Madison', 'St_Louis', 'Green_Bay',
-                                          'Lansing', 'Indianapolis'],
+        PREDICTION_TARGET_IS_CLEAR_24H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Madison', 'St_Louis', 'Green_Bay',
+                                         'Lansing', 'Indianapolis'],
 
         PREDICTION_TARGET_IS_PRECIP_6H: ['Cedar_Rapids', 'Des_Moines', 'Quincy', 'Madison', 'Green_Bay',
                                          'Indianapolis'],
@@ -114,8 +123,8 @@ class Config(object):
                                           'Indianapolis'],
 
         PREDICTION_TARGET_TEMP_6H: ['Cedar_Rapids', 'Des_Moines', 'Rochester'],
-        PREDICTION_TARGET_TEMP_12H:  ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison', 'Lansing',
-                                      'Indianapolis'],
+        PREDICTION_TARGET_TEMP_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison', 'Lansing',
+                                     'Indianapolis'],
         PREDICTION_TARGET_TEMP_18H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy'],
         PREDICTION_TARGET_TEMP_24H: ['Cedar_Rapids', 'Des_Moines', 'St_Louis', 'Indianapolis'],
 
@@ -186,4 +195,3 @@ class Config(object):
         PREDICTION_TARGET_WINDSPEED_18H: 'NN',
         PREDICTION_TARGET_WINDSPEED_24H: 'LINEAR'
     }
-
