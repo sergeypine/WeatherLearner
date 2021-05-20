@@ -40,6 +40,8 @@ class Config(object):
     DATA_SERVICE_LOG_LEVEL = 'INFO'
     DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
     # =========================================================
+    DATA_STORE_BASE_DIR = "../data_store"
+    # =========================================================
     LOCATION_CODES = {
         'Chicago': 'KMDW',
         'Cedar_Rapids': 'KCID',

@@ -1,7 +1,12 @@
+import sys
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+import os.path
+from os import path
 
+sys.path.insert(1, '../')
+import config
 
 # Mostly copy-paste of https://www.tensorflow.org/tutorials/structured_data/time_series
 class WindowGenerator():
@@ -85,3 +90,21 @@ class WindowGenerator():
     @property
     def test(self):
         return self.make_dataset(self.test_df)
+
+
+class DataStore(object):
+
+    def __init__(self):
+        self.conf = config.Config
+
+    def readings_append(self, location, data_frame):
+        target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
+        if not path.exists(target_file):
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+            data_frame.to_csv(target_file)
+        else:
+            data_frame.to_csv(target_file, mode='a', header=False)
+
+    def readings_load(self, location):
+        target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
+        return pd.read_csv(target_file)
