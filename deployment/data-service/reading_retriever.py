@@ -11,6 +11,7 @@ sys.path.insert(1, '../')
 import config
 import libcommons.libcommons
 
+
 class ReadingRetriever():
     def __init__(self):
 
@@ -40,7 +41,7 @@ class ReadingRetriever():
 
         self.data_store.readings_append(location, loc_data_noaa)
         logging.info("Finished retrieving readings for location {}; {} rows found".format(location,
-                                                                                              len(loc_data_noaa)))
+                                                                                          len(loc_data_noaa)))
 
     def get_html_for_date(self, date, location_code):
         # URL example: https://www.wunderground.com/history/daily/KMDW/date/2015-1-21
@@ -60,7 +61,7 @@ class ReadingRetriever():
                 attempts = attempts + 1
                 if attempts >= self.PAGE_LOAD_RETRIES:
                     logging.info("Unexpected error loading page: {} {}".format(sys.exc_info()[0],
-                                                                                   sys.exc_info()[1]))
+                                                                               sys.exc_info()[1]))
 
         return None
 
@@ -129,15 +130,11 @@ class ReadingRetriever():
 
         # Round all timestamps to 1h
         cleaned_df['DATE'] = pd.to_datetime(cleaned_df['Time']).dt.round('1h')
+        cleaned_df = cleaned_df.sort_values(by='DATE').drop(columns=['Time'])
 
-        cleaned_df = cleaned_df.sort_values(by='DATE')
-
-        # Drop rows with identical timestamp (for some hours we have multiple readings, keep one)
-        # NOTE - this chooses a random duplicate value, consider doing an average instead
-        cleaned_df = cleaned_df.drop_duplicates(subset=['DATE'])
-
-        # Fill in missing hours and impune values but only within 3h
-        cleaned_df = cleaned_df.set_index('DATE').resample('H').nearest(limit=3).dropna().reset_index()
+        # Resample so there are exactly 24 hourly readings;
+        #  (drop duplicate hours, then add missing hours and impune)
+        cleaned_df = self.df_to_24h_freq(cleaned_df)
 
         # Create day-of-year and hour-of-day sin/cos columns to capture the cyclical nature of time
         cleaned_df['_day_sin'] = np.sin(2 * np.pi * cleaned_df['DATE'].dt.dayofyear / 365)
@@ -147,8 +144,22 @@ class ReadingRetriever():
         cleaned_df['_hour_cos'] = np.cos(2 * np.pi * cleaned_df['DATE'].dt.hour / 24)
 
         # Shed the unnecessary columns
-        cleaned_df = cleaned_df.drop(columns=['Time', 'Condition', 'Wind', 'Precip'])
+        cleaned_df = cleaned_df.drop(columns=['Condition', 'Wind', 'Precip'])
         return cleaned_df
+
+    @staticmethod
+    def df_to_24h_freq(df):
+        df = df.drop_duplicates(subset=['DATE']).reindex()
+
+        frame_date = df['DATE'].iloc[2].date() # Head & Tail entries are sometimes from other dates
+        ts_index = pd.date_range(start=frame_date, periods=24, freq='H')
+        resampled_df = pd.DataFrame(ts_index, columns=['DATE']).merge(df, on=['DATE'], how='outer')
+
+        resampled_df = resampled_df[resampled_df['DATE'].dt.date == frame_date] # Chuck extraneous dates
+
+        resampled_df = resampled_df.fillna(method='ffill')
+        resampled_df = resampled_df.fillna(method='bfill')
+        return resampled_df
 
     @staticmethod
     def get_wind_dir_sin_cos(wind_direction):
@@ -189,15 +200,12 @@ class ReadingRetriever():
         if ('fair' in lcondition) or ('smoke' in lcondition) or ('haze' in lcondition):
             is_clear = 1
             cloud_intensity = 0
-
-        if 'partly' in lcondition:
+        elif 'partly' in lcondition:
             is_clear = 1
             cloud_intensity = 1.5
-
-        if 'mostly' in lcondition:
+        elif 'mostly' in lcondition:
             cloud_intensity = 4
-
-        if 'cloudy' in lcondition:
+        elif 'cloudy' in lcondition:
             cloud_intensity = 5
 
         if 'fog' in lcondition:
