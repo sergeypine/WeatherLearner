@@ -1,3 +1,4 @@
+import datetime
 import sys
 import tensorflow as tf
 import numpy as np
@@ -122,9 +123,36 @@ class DataStore(object):
         return pd.read_csv(target_file, parse_dates=['DATE'])
 
     def predictions_append(self, prediction_time, prediction_target, predicted_val):
-        pass
+        target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        df = pd.DataFrame.from_dict({
+            'DATE': [prediction_time],
+            'LOOK_AHEAD': [prediction_target.lookahead],
+            'VAR': [prediction_target.var],
+            'PREDICTION': [predicted_val]
+        })
+        if not path.exists(target_file):
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+            df.to_csv(target_file, index=False)
+        else:
+            existing_df = pd.read_csv(target_file)
+
+            # Override the collision, if any, with this latest prediction
+            existing_df = existing_df.drop(
+                existing_df[(existing_df['DATE'] == prediction_time) &
+                            (existing_df['VAR'] == prediction_target.var) &
+                            (existing_df['LOOK_AHEAD'] == prediction_target.lookahead)].index)
+
+            existing_df = pd.concat([existing_df, df], ignore_index=True)
+            existing_df = existing_df.drop_duplicates(subset=['DATE', 'VAR', 'PREDICTION'])
+
+            existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
+            existing_df = existing_df.sort_values(by=['DATE', 'LOOK_AHEAD'])
+
+            existing_df.to_csv(target_file, index=False)
 
     def predictions_load(self):
+        target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        return pd.read_csv(target_file, parse_dates=['DATE'])
         pass
 
 
@@ -136,15 +164,34 @@ class FeatureSetBuilder(object):
         self.conf = config.Config
         self.data_store = DataStore()
 
-    def build_feature_set(self, prediction_target):
+    def build_feature_set(self, prediction_target, base_time=None):
+        """
+        Build a Pandas DF containing all features for a prediction target, one row/timestamp
+
+        :param prediction_target: what we are predicting (predicted variable, lookahead time)
+        :param base_time: timestamp of the latest reading based on which we are predicting
+            (if None, use latest available)
+        :return: Pandas DF containing all features for a prediction target, one row/timestamp, no extra rows
+        """
         target_df = self.data_store.readings_load(self.conf.TARGET_LOCATION)
         target_df = self.drop_unused_columns(target_df, prediction_target)
-        merged_df = target_df
+
+        # Base Time not provided -> assume we are predicting for the latest reading
+        if base_time is None:
+            base_time = target_df.iloc[-1]['DATE']
+
+        #  get rid of rows outside time range & pad if timestamps are missing
+        merged_df = self.adjust_df_to_relevant_time_range(prediction_target, target_df, base_time)
+
         suffix_no = 1
 
-        # Merge adjacent location files one by one relying on DATA
+        # Merge adjacent location files one by one relying on DATE
         for adjacent_location in self.conf.PREDICTION_TARGET_LOCATIONS[prediction_target]:
             adjacent_df = self.data_store.readings_load(adjacent_location)
+
+            #  get rid of rows outside time range & pad if timestamps are missing
+            adjacent_df = self.adjust_df_to_relevant_time_range(prediction_target, adjacent_df, base_time)
+
             adjacent_df = self.drop_unused_columns(adjacent_df, prediction_target)
 
             # Take control of column name suffix in the dataset being merged in
@@ -152,9 +199,6 @@ class FeatureSetBuilder(object):
             adjacent_df = adjacent_df.rename(columns={"DATE{}".format(suffix_no): 'DATE'})
             merged_df = pd.merge(merged_df, adjacent_df, on='DATE')
             suffix_no = suffix_no + 1
-
-        # DATE column is of no use in the modelling stage
-        merged_df = merged_df.drop(columns=['DATE'])
 
         return merged_df
 
@@ -164,6 +208,20 @@ class FeatureSetBuilder(object):
         all_columns.append('DATE')
         all_columns.append(prediction_target.var)
         df = df[all_columns]
+
+        return df
+
+    def adjust_df_to_relevant_time_range(self, prediction_target, df, base_time):
+        df = df[df['DATE'] <= base_time]
+        df = df.tail(self.conf.PREDICTION_TARGET_LOOKBACKS[prediction_target] + 1)
+
+        # If last row is not @ base_time, pad the tail of DF with duplicates of last row
+        missing_hrs = int((base_time - df.iloc[-1]['DATE']).seconds / 3600)
+
+        while missing_hrs > 0:
+            df = df.append(pd.Series(df.iloc[-1]), ignore_index=True)
+            df.loc[df.index[-1], 'DATE'] = df.iloc[-1]['DATE'] + datetime.timedelta(hours=1)
+            missing_hrs = missing_hrs - 1
 
         return df
 

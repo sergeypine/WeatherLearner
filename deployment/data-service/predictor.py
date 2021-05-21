@@ -37,9 +37,11 @@ class Predictor():
     def predict_for_target_and_base_time(self, prediction_target: config.PredictionTarget,
                                          base_time: datetime.datetime = None):
         # Get a Dataframe with data for locations and feature vars that are relevant to this prediction target
-        feature_set = self.feature_set_builder.build_feature_set(prediction_target)
+        feature_set = self.feature_set_builder.build_feature_set(prediction_target, base_time)
 
-        # TODO - manage base_time!
+        # If base_time not provided, use latest available timestamp
+        if base_time is None:
+            base_time = feature_set.iloc[-1]['DATE']
 
         # Normalize Data
         feature_set = self.feature_set_builder.normalize_data(feature_set, prediction_target,
