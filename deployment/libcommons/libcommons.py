@@ -8,6 +8,7 @@ from os import path
 sys.path.insert(1, '../')
 import config
 
+
 # Mostly copy-paste of https://www.tensorflow.org/tutorials/structured_data/time_series
 class WindowGenerator():
 
@@ -92,6 +93,10 @@ class WindowGenerator():
         return self.make_dataset(self.test_df)
 
 
+# =============================================================================
+# =============================================================================
+
+
 class DataStore(object):
 
     def __init__(self):
@@ -101,10 +106,84 @@ class DataStore(object):
         target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
         if not path.exists(target_file):
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
-            data_frame.to_csv(target_file)
+            data_frame.to_csv(target_file, index=False)
         else:
-            data_frame.to_csv(target_file, mode='a', header=False)
+            existing_df = pd.read_csv(target_file)
+            existing_df = pd.concat([existing_df, data_frame], ignore_index=True)
+            existing_df = existing_df.drop_duplicates(subset=['DATE'])
+
+            existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
+            existing_df = existing_df.sort_values(by='DATE')
+
+            existing_df.to_csv(target_file, index=False)
 
     def readings_load(self, location):
         target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
-        return pd.read_csv(target_file)
+        return pd.read_csv(target_file, parse_dates=['DATE'])
+
+    def predictions_append(self, prediction_time, prediction_target, predicted_val):
+        pass
+
+    def predictions_load(self):
+        pass
+
+
+# =============================================================================
+# =============================================================================
+
+class FeatureSetBuilder(object):
+    def __init__(self):
+        self.conf = config.Config
+        self.data_store = DataStore()
+
+    def build_feature_set(self, prediction_target):
+        target_df = self.data_store.readings_load(self.conf.TARGET_LOCATION)
+        target_df = self.drop_unused_columns(target_df, prediction_target)
+        merged_df = target_df
+        suffix_no = 1
+
+        # Merge adjacent location files one by one relying on DATA
+        for adjacent_location in self.conf.PREDICTION_TARGET_LOCATIONS[prediction_target]:
+            adjacent_df = self.data_store.readings_load(adjacent_location)
+            adjacent_df = self.drop_unused_columns(adjacent_df, prediction_target)
+
+            # Take control of column name suffix in the dataset being merged in
+            adjacent_df = adjacent_df.add_suffix(str(suffix_no))
+            adjacent_df = adjacent_df.rename(columns={"DATE{}".format(suffix_no): 'DATE'})
+            merged_df = pd.merge(merged_df, adjacent_df, on='DATE')
+            suffix_no = suffix_no + 1
+
+        # DATE column is of no use in the modelling stage
+        merged_df = merged_df.drop(columns=['DATE'])
+
+        return merged_df
+
+    def drop_unused_columns(self, df, prediction_target):
+        features_to_use = self.conf.PREDICTION_TARGET_FEATURES[prediction_target]
+        all_columns = features_to_use.copy()
+        all_columns.append('DATE')
+        all_columns.append(prediction_target.var)
+        df = df[all_columns]
+
+        return df
+
+    @staticmethod
+    def normalize_data(self, featureset, prediction_target, mean, std):
+        columns_to_normalize = self.get_columns_to_normalize(featureset, prediction_target)
+        featureset[columns_to_normalize] = (featureset[columns_to_normalize] - mean) / std
+        return featureset
+
+    @staticmethod
+    def get_columns_to_normalize(featureset, prediction_target):
+        return featureset.columns.drop([prediction_target.var])
+
+
+# =============================================================================
+# =============================================================================
+def get_normalization_file(prediction_target):
+    return "{}/{}_{}h_normalization.json".format(config.Config.MODELS_BASE_DIR,
+                                                 prediction_target.var, prediction_target.lookahead)
+
+
+def get_model_file(prediction_target):
+    return "{}/{}_{}h.h5".format(config.Config.MODELS_BASE_DIR, prediction_target.var, prediction_target.lookahead)

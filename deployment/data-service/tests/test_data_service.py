@@ -22,7 +22,7 @@ def common(request):
 
 
 def test_reading_retriever():
-    """ Retrieve weather data for 2 days from wundeground, then sanity check it"""
+    """ Retrieve weather data for 2 days from wundeground, then sanity check data"""
     rr = reading_retriever.ReadingRetriever()
     ds = libcommons.libcommons.DataStore()
 
@@ -35,6 +35,7 @@ def test_reading_retriever():
     assert len(df) == 48  # New date entries must be appended
 
     # Check date ranges are correct
+    df['DATE'] = df['DATE'].astype(str)  # blegh
     assert df['DATE'][0] == '2015-06-15 00:00:00'
     assert df['DATE'][23] == '2015-06-15 23:00:00'
     assert df['DATE'].iloc[24] == '2015-06-16 00:00:00'
@@ -52,3 +53,7 @@ def test_reading_retriever():
     assert target_row['_is_clear'] == 0.0
     assert target_row['_is_precip'] == 0.0
     print(df)
+
+
+def test_predictor():
+    pass

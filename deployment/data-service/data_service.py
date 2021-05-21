@@ -1,14 +1,34 @@
+import datetime
 import sys
 import time
+import pytz
 import schedule
 import logging
 
 sys.path.insert(1, '../')
 import config
+import reading_retriever
+import predictor
+import data_service_utils
 
 
 def generate_forecast_job():
     logging.info("Start Forecast Job")
+
+    forecast_dates = data_service_utils.get_dates_for_forecast(conf)
+
+    # (1) Get Weather Readings for all locations and for the last 2 days
+    for location in conf.LOCATION_CODES:
+        for forecast_date in forecast_dates:
+            logging.info("Retrieving data for location {}, date {}".format(location, forecast_date))
+            reading_retriever.retrieve_for_date_and_location(forecast_date, location)
+
+    # (2) Generate Forecast
+    for prediction_target in conf.ALL_PREDICTION_TARGETS:
+        logging.info("Forecasting for Prediction Target {}".format(prediction_target))
+        # Unspecified base_time -> for latest time for which data available
+        predictor.predict_for_target_and_base_time(prediction_target)
+
     logging.info("End Forecast Job")
 
 
@@ -36,4 +56,6 @@ def main():
 
 if __name__ == "__main__":
     conf = config.Config
+    reading_retriever = reading_retriever.ReadingRetriever()
+    predictor = predictor.Predictor()
     main()

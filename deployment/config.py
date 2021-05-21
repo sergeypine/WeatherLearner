@@ -41,6 +41,7 @@ class Config(object):
     DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
     # =========================================================
     DATA_STORE_BASE_DIR = "../data_store"
+    MODELS_BASE_DIR = "../pretrained"
     # =========================================================
     LOCATION_CODES = {
         'Chicago': 'KMDW',
