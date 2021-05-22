@@ -26,8 +26,12 @@ def generate_forecast_job():
     # (2) Generate Forecast
     for prediction_target in conf.ALL_PREDICTION_TARGETS:
         logging.info("Forecasting for Prediction Target {}".format(prediction_target))
-        # Unspecified base_time -> for latest time for which data available
-        predictor.predict_for_target_and_base_time(prediction_target)
+
+        # Predict based on the current time
+        base_time = datetime.datetime.now(pytz.timezone(conf.TARGET_TIMEZONE))
+        base_time = datetime.datetime(base_time.year, base_time.month, base_time.day, base_time.hour, 0, 0)
+
+        predictor.predict_for_target_and_base_time(prediction_target, base_time)
 
     logging.info("End Forecast Job")
 
@@ -38,10 +42,6 @@ def update_prediction_audit_job():
 
 
 def main():
-    logging.basicConfig(filename=conf.DATA_SERVICE_LOG_FILE,
-                        format=conf.DATA_SERVICE_LOG_FORMAT,
-                        level=conf.DATA_SERVICE_LOG_LEVEL)
-
     # Pre-execute the jobs
     generate_forecast_job()
     update_prediction_audit_job()
@@ -56,6 +56,10 @@ def main():
 
 if __name__ == "__main__":
     conf = config.Config
+    logging.basicConfig(filename=conf.DATA_SERVICE_LOG_FILE,
+                        format=conf.DATA_SERVICE_LOG_FORMAT,
+                        level=conf.DATA_SERVICE_LOG_LEVEL)
+
     reading_retriever = reading_retriever.ReadingRetriever()
     predictor = predictor.Predictor()
     main()

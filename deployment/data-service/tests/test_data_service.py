@@ -7,6 +7,7 @@ import pytest
 sys.path.insert(1, '../')
 
 import reading_retriever
+import predictor
 import config
 import libcommons.libcommons
 
@@ -21,6 +22,7 @@ def common(request):
     request.addfinalizer(remove_test_dir)
 
 
+# @pytest.mark.skip(reason="save time")
 def test_reading_retriever():
     """ Retrieve weather data for 2 days from wundeground, then sanity check data"""
     rr = reading_retriever.ReadingRetriever()
@@ -56,4 +58,33 @@ def test_reading_retriever():
 
 
 def test_predictor():
-    pass
+    """Verify that predictor runs for all prediction targets and produces non-insane predictions
+        (NOTE: this also verifies all pretrained models"""
+    old_ds_path = config.Config.DATA_STORE_BASE_DIR
+    config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
+    if os.path.exists("{}/predictions.csv".format(config.Config.DATA_STORE_BASE_DIR)):
+        os.remove("{}/predictions.csv".format(config.Config.DATA_STORE_BASE_DIR))
+
+    pr = predictor.Predictor()
+    ds = libcommons.libcommons.DataStore()
+
+    try:
+        for prediction_target in config.Config.ALL_PREDICTION_TARGETS:
+            pr.predict_for_target_and_base_time(prediction_target)
+        predictions = ds.predictions_load()
+
+        assert len(predictions) == len(config.Config.ALL_PREDICTION_TARGETS)
+
+        for prediction_target in config.Config.ALL_PREDICTION_TARGETS:
+            prediction_row = predictions[(predictions['VAR'] == prediction_target.var) &
+                                         (predictions['LOOK_AHEAD'] == prediction_target.lookahead)].iloc[0]
+            prediction = prediction_row['PREDICTION']
+            if prediction_target.var == 'Temp':
+                assert 50 < prediction < 100
+            elif prediction_target.var == 'WindSpeed':
+                assert 0 < prediction < 20
+            elif prediction_target.var in ['_is_clear', '_is_precip']:
+                assert prediction in [0, 1]
+
+    finally:
+        config.Config.DATA_STORE_BASE_DIR = old_ds_path

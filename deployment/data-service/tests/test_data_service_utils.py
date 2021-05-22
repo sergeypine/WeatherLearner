@@ -18,10 +18,10 @@ def test_get_dates_for_forecast():
     forecast_time = datetime.datetime(2020, 10, 10, 5, 0, 0)
     dates = data_service_utils.get_dates_for_forecast(conf, forecast_time=forecast_time)
     assert len(dates) == 2
-    assert dates[0] == datetime.date(2020, 10, 9)
-    assert dates[1] == datetime.date(2020, 10, 10)
+    assert dates[0] == datetime.datetime(2020, 10, 9)
+    assert dates[1] == datetime.datetime(2020, 10, 10)
 
     forecast_time = datetime.datetime(2020, 10, 10, 7, 0, 0)
     dates = data_service_utils.get_dates_for_forecast(conf, forecast_time=forecast_time)
-    assert dates[0] == datetime.date(2020, 10, 10)
+    assert dates[0] == datetime.datetime(2020, 10, 10)
     assert len(dates) == 1

@@ -1,6 +1,8 @@
 import datetime
 import sys
 import time
+
+import pandas as pd
 import pytz
 
 sys.path.insert(1, '../')
@@ -17,7 +19,7 @@ def get_dates_for_forecast(conf: config.Config, forecast_time=None):
     dates = []
     current_date = lookback_datetime.date()
     while current_date <= now_datetime.date():
-        dates.append(current_date)
+        dates.append(datetime.datetime.combine(current_date, datetime.datetime.min.time()))
         current_date = current_date + datetime.timedelta(days=1)
 
     return dates

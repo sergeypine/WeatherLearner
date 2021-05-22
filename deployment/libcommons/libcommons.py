@@ -103,17 +103,25 @@ class DataStore(object):
     def __init__(self):
         self.conf = config.Config
 
-    def readings_append(self, location, data_frame):
+    def readings_append(self, location, data_frame: pd.DataFrame):
         target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
         if not path.exists(target_file):
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
             data_frame.to_csv(target_file, index=False)
         else:
-            existing_df = pd.read_csv(target_file)
-            existing_df = pd.concat([existing_df, data_frame], ignore_index=True)
-            existing_df = existing_df.drop_duplicates(subset=['DATE'])
+            existing_df = pd.read_csv(target_file, parse_dates=['DATE'])
 
+            data_frame['DATE'] = pd.to_datetime(data_frame['DATE'])
             existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
+
+            # Chuck all readings for timestamps present in this new frame
+            dates_in_appended = np.array(data_frame['DATE'].unique().astype('datetime64[ns]'))
+            existing_df = existing_df[~(existing_df['DATE'].isin(dates_in_appended))]
+
+            # Now add in the new frame
+            existing_df = pd.concat([existing_df, data_frame], ignore_index=True)
+
+            existing_df = existing_df.drop_duplicates(subset=['DATE'])
             existing_df = existing_df.sort_values(by='DATE')
 
             existing_df.to_csv(target_file, index=False)
@@ -134,7 +142,7 @@ class DataStore(object):
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
             df.to_csv(target_file, index=False)
         else:
-            existing_df = pd.read_csv(target_file)
+            existing_df = pd.read_csv(target_file, parse_dates=['DATE'])
 
             # Override the collision, if any, with this latest prediction
             existing_df = existing_df.drop(
@@ -225,7 +233,6 @@ class FeatureSetBuilder(object):
 
         return df
 
-    @staticmethod
     def normalize_data(self, featureset, prediction_target, mean, std):
         columns_to_normalize = self.get_columns_to_normalize(featureset, prediction_target)
         featureset[columns_to_normalize] = (featureset[columns_to_normalize] - mean) / std

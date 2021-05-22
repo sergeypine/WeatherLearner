@@ -43,9 +43,12 @@ class Predictor():
         if base_time is None:
             base_time = feature_set.iloc[-1]['DATE']
 
+        # DATE is no longer of use to us
+        feature_set = feature_set.drop(columns=['DATE'])
+
         # Normalize Data
         feature_set = self.feature_set_builder.normalize_data(feature_set, prediction_target,
-                                                              *self.means_and_stds[prediction_target])
+                                                              *(self.means_and_stds[prediction_target]))
 
         # Get the right model for this prediction
         model = self.models[prediction_target]
@@ -75,8 +78,7 @@ class Predictor():
         wg = libcommons.libcommons.WindowGenerator(
             input_width=self.conf.PREDICTION_TARGET_LOOKBACKS[prediction_target],
             label_width=agg_interval,
-            shift=prediction_target.lookahead -
-                  self.conf.PREDICTED_VARIABLE_AHI[prediction_target.var][prediction_target.var],
+            shift=prediction_target.lookahead - self.conf.PREDICTED_VARIABLE_AHI[prediction_target.var],
             label_columns=[prediction_target.var],
             train_df=featureset,
             test_df=None,

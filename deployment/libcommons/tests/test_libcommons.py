@@ -24,17 +24,38 @@ def common(request):
 
 def test_datastore_readings():
     """Verify correct concatenation of new readings and that duplicates are eliminated"""
+
+    nine = pd.Timestamp('2020-02-15 09:00:00')
+    ten = pd.Timestamp('2020-02-15 10:00:00')
+    eleven = pd.Timestamp('2020-02-15 11:00:00')
     ds = libcommons.DataStore()
-    ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': ['2020-02-15 10:00:00'], 'data': ['data1']}))
+
+    ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [ten], 'data': ['data1']}))
     df = ds.readings_load('Rio')
     assert len(df) == 1
+    assert df.iloc[0]['data'] == 'data1'
 
     ds.readings_append('Rio', pd.DataFrame.from_dict(
-        {'DATE': ['2020-02-15 10:00:00', '2020-02-15 11:00:00'], 'data': ['data1', 'data2']}))
+        {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2']}))
+    df = ds.readings_load('Rio')
+
+    assert len(df) == 2
+    assert df.iloc[0]['data'] == 'data1_replaced'
+    assert df.iloc[1]['data'] == 'data2'
+
+    ds.readings_append('Rio', pd.DataFrame.from_dict(
+        {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2_replaced']}))
     df = ds.readings_load('Rio')
     assert len(df) == 2
-    assert df.iloc[0]['data'] == 'data1'
-    assert df.iloc[1]['data'] == 'data2'
+    assert df.iloc[0]['data'] == 'data1_replaced'
+    assert df.iloc[1]['data'] == 'data2_replaced'
+
+    ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [nine], 'data': ['data3']}))
+    df = ds.readings_load('Rio')
+    assert len(df) == 3
+    assert df.iloc[0]['data'] == 'data3'
+    assert df.iloc[1]['data'] == 'data1_replaced'
+    assert df.iloc[2]['data'] == 'data2_replaced'
 
 
 def test_datastore_predictions():
