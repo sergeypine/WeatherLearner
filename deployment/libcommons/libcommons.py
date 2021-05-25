@@ -128,10 +128,14 @@ class DataStore(object):
 
     def readings_load(self, location):
         target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
-        return pd.read_csv(target_file, parse_dates=['DATE'])
+        if not os.path.exists(target_file):
+            return None
+        df = pd.read_csv(target_file, parse_dates=['DATE'])
+        return df
 
     def predictions_append(self, prediction_time, prediction_target, predicted_val):
         target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+
         df = pd.DataFrame.from_dict({
             'DATE': [prediction_time],
             'LOOK_AHEAD': [prediction_target.lookahead],
@@ -160,6 +164,9 @@ class DataStore(object):
 
     def predictions_load(self):
         target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        if not os.path.exists(target_file):
+            return None
+
         return pd.read_csv(target_file, parse_dates=['DATE'])
         pass
 

@@ -39,6 +39,12 @@ class Config(object):
     DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
     DATA_SERVICE_LOG_LEVEL = 'INFO'
     DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
+
+    WEBAPP_LOG_FILE = '../logs/webapp.log'
+    WEBAPP_LOG_LEVEL = 'INFO'
+    WEBAPP_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
+
+    WEBAPP_MAX_READING_DELAY_HOURS = 3
     # =========================================================
     DATA_STORE_BASE_DIR = "../data_store"
     MODELS_BASE_DIR = "../pretrained"
