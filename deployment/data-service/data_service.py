@@ -38,6 +38,11 @@ def generate_forecast_job():
 
 def update_prediction_audit_job():
     logging.info("Start Backfill Job")
+
+    # (1)  date->location dictionary of readings we are missing
+    missing_dates_locations = data_service_utils.get_date_locations_to_retrieve(conf)
+
+
     logging.info("End Backfill Job")
 
 

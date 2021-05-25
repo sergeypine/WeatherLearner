@@ -1,0 +1,11 @@
+Flask~=1.1.2
+pandas==1.2.3
+numpy==1.19.4
+Keras==2.4.3
+Keras-Preprocessing==1.1.2
+tensorflow==2.4.1
+schedule==1.1.0
+bs4==0.0.1
+selenium==3.141.0
+json5==0.9.5
+lxml==4.6.1

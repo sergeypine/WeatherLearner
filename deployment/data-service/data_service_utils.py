@@ -23,3 +23,9 @@ def get_dates_for_forecast(conf: config.Config, forecast_time=None):
         current_date = current_date + datetime.timedelta(days=1)
 
     return dates
+
+
+def get_date_locations_to_retrieve(conf: config.Config):
+    now_datetime = datetime.datetime.now(pytz.timezone(conf.TARGET_TIMEZONE))
+    return []
+

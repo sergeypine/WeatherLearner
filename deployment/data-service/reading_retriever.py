@@ -18,11 +18,15 @@ class ReadingRetriever():
         self.PAGE_LOAD_RETRIES = 4
         self.WAIT_TIME = 2
 
-        self.chrome_options = Options()
-        self.chrome_options.headless = True
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_prefs = {}
+        chrome_options.experimental_options["prefs"] = chrome_prefs
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
         self._driver = webdriver.Chrome(executable_path="bin/chromedriver",
-                                        chrome_options=self.chrome_options)
-
+                                        chrome_options=chrome_options)
         self.conf = config.Config
         self.data_store = libcommons.libcommons.DataStore()
 
