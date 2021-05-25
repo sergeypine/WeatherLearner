@@ -41,12 +41,16 @@ def get_current_conditions_df():
         return None
 
     now_datetime = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(tzinfo=None)
-    readings = readings[readings['DATE'] < now_datetime]  # we need to do this due to padding to 24h
+
+    # we need to do this due to padding to 24h
+    readings = readings[readings['DATE'] < now_datetime]
+    readings = readings.drop_duplicates(subset=['Temp', 'DewPoint', 'Humidity', 'WindSpeed', 'WindGust', 'Pressure',
+                                                'Precipitation', '_wind_dir_sin', '_wind_dir_cos'], keep='first')
     last_reading = readings.iloc[-1]
 
     if (now_datetime - last_reading['DATE']).total_seconds() / 3600 > config.Config.WEBAPP_MAX_READING_DELAY_HOURS:
         get_logger().warning("No Recent Weather Readings for Target Location, last available is for {}".
-                                format(last_reading['DATE']))
+                             format(last_reading['DATE']))
         return None
 
     return last_reading[['DATE', 'Temp', 'WindSpeed', '_is_clear', '_is_precip']]

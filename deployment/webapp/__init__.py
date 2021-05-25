@@ -13,6 +13,8 @@ import libcommons.libcommons
 import webapp_utils
 
 app = Flask(__name__)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
 
 # ===============================================================
 app.config.from_object(config.Config())
@@ -29,15 +31,30 @@ def forecast():
     logging.info("Received /forecast request")
     forecast_df = webapp_utils.get_forecast_df()
     current_conditions_df = webapp_utils.get_current_conditions_df()
-    logging.info(current_conditions_df)
-    current_conditions_df = pd.DataFrame(current_conditions_df).reset_index()
-    current_conditions_df.columns = ['Variable', 'Value']
-    logging.info(current_conditions_df)
+
     current_time = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE))
     current_time = current_time.strftime('%Y-%m-%d %H:%M:%S')
-    return render_template('forecast.html', current_time=current_time,
-                           column_names=current_conditions_df.columns.values,
-                           row_data=list(current_conditions_df.values.tolist()))
+
+    if forecast_df is not None and len(forecast_df) > 0 and \
+            current_conditions_df is not None and len(current_conditions_df) > 0:
+        # TODO - temp code, rewrite with proper table arrangement
+        logging.info(current_conditions_df)
+        current_conditions_df = pd.DataFrame(current_conditions_df).reset_index()
+        current_conditions_df.columns = ['Variable', 'Value']
+        logging.info(current_conditions_df)
+
+        table_info = [
+            {'title': 'Last Known Conditions',
+             'column_names': current_conditions_df.columns.values,
+             'row_data': list(current_conditions_df.values.tolist())},
+            {'title': 'Current Forecast',
+             'column_names': forecast_df.columns.values,
+             'row_data': list(forecast_df.values.tolist())},
+        ]
+        return render_template('forecast.html', current_time=current_time, table_info=table_info)
+    else:
+        return render_template('forecast_nodata.html', current_time=current_time)
+
 
 
 @app.route('/predict_audit')

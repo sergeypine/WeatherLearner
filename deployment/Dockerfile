@@ -22,10 +22,11 @@ COPY ./libcommons /libcommons
 COPY ./pretrained /pretrained
 RUN mkdir -p /logs
 
+COPY ./run.sh /run.sh
+
 RUN pip3 install -r requirements.txt
 
-WORKDIR /data-service
-
-ENTRYPOINT [ "python3" ]
-
-CMD ["data_service.py"]
+# This launches both webapps and data-service
+ENV FLASK_APP=__init__.py
+RUN chmod a+x run.sh
+CMD ["./run.sh"]
