@@ -5,34 +5,17 @@
     <body>
         <h3>Chicago Weather Predictor: Current Forecast</h3>
         <p>Current Time in Chicago is {{ current_time }}</p>
-        <!-- > CURRENT CONDITIONS <!-->
-        <hr>
-        <h4>Last Known Conditions</h4>
-        <table>
-        <tr>
-            {% for col in column_names %}
-            <th>{{col}}</th>
-            {% endfor %}
-        </tr>
-        {% for row in row_data %}
-        <tr>
-            {% for row_cell in row %}
-            <td>{{row_cell}}</td>
-            {% endfor %}
-        </tr>
-        {% endfor %}
-        </table>
 
-         <!-- > FORECAST <!-->
+        {% for table_info in table_info %}
         <hr>
-        <h4>Current Forecast</h4>
+        <h4>{{ table_info.title }}</h4>
         <table>
         <tr>
-            {% for col in column_names %}
+            {% for col in table_info.column_names %}
             <th>{{col}}</th>
             {% endfor %}
         </tr>
-        {% for row in row_data %}
+        {% for row in table_info.row_data %}
         <tr>
             {% for row_cell in row %}
             <td>{{row_cell}}</td>
@@ -40,5 +23,7 @@
         </tr>
         {% endfor %}
         </table>
+        {% endfor %}
+
     </body>
 </html>
