@@ -1,13 +1,21 @@
 <html>
     <head>
         <title>Chicago Weather Predictor</title>
+        <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.6/build/pure-min.css"
+              integrity="sha384-Uu6IeWbM+gzNVXJcM9XV3SohHtmWE+3VGi496jvgX1jyvDTXfdK+rfZc8C1Aehk5"
+              crossorigin="anonymous">
     </head>
     <body>
-        <h3>Chicago Weather Predictor: Current Forecast</h3>
-        <p>Current Time in Chicago is {{ current_time }}</p>
+        <h3 style="padding-top: 10px; padding-left: 10px">Chicago Weather Predictor: Current Forecast</h3>
+        <hr>
+        <p style="padding-left: 10px">Current Time in Chicago is {{ current_time }}</p>
 
         <hr>
-        <h3>No Data is Available</h3>
+        <h3 style="padding-left: 10px">No Data is Available</h3>
+        <hr>
 
+        <a style="padding-left: 10px" href=predict_audit>
+            <button class="pure-button">Prediction Audit</button>
+        </a>
     </body>
 </html>

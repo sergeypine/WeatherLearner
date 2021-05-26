@@ -37,12 +37,9 @@ def forecast():
 
     if forecast_df is not None and len(forecast_df) > 0 and \
             current_conditions_df is not None and len(current_conditions_df) > 0:
-        # TODO - temp code, rewrite with proper table arrangement
-        logging.info(current_conditions_df)
-        current_conditions_df = pd.DataFrame(current_conditions_df).reset_index()
-        current_conditions_df.columns = ['Variable', 'Value']
-        logging.info(current_conditions_df)
 
+        current_conditions_df = webapp_utils.format_forecast(current_conditions_df)
+        forecast_df = webapp_utils.format_forecast(forecast_df)
         table_info = [
             {'title': 'Last Known Conditions',
              'column_names': current_conditions_df.columns.values,
@@ -59,7 +56,7 @@ def forecast():
 
 @app.route('/predict_audit')
 def predict_audit():
-    return {}
+    return render_template("audit.html")
 
 
 @app.route('/model_info')

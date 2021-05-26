@@ -1,6 +1,8 @@
 import datetime
 import logging
 import sys
+
+import pandas as pd
 import pytz
 from datetime import timedelta
 import numpy
@@ -45,7 +47,11 @@ def get_current_conditions_df():
     # we need to do this due to padding to 24h
     readings = readings[readings['DATE'] < now_datetime]
     readings = readings.drop_duplicates(subset=['Temp', 'DewPoint', 'Humidity', 'WindSpeed', 'WindGust', 'Pressure',
-                                                'Precipitation', '_wind_dir_sin', '_wind_dir_cos'], keep='first')
+                                                '_wind_dir_sin', '_wind_dir_cos'], keep='first')
+    if readings is None or len(readings) < 1:
+        get_logger().warning("No Recent Weather Readings for Target Location Found")
+        return None
+
     last_reading = readings.iloc[-1]
 
     if (now_datetime - last_reading['DATE']).total_seconds() / 3600 > config.Config.WEBAPP_MAX_READING_DELAY_HOURS:
@@ -53,12 +59,63 @@ def get_current_conditions_df():
                              format(last_reading['DATE']))
         return None
 
-    return last_reading[['DATE', 'Temp', 'WindSpeed', '_is_clear', '_is_precip']]
+    last_reading =  last_reading[['DATE', 'Temp', 'WindSpeed', '_is_clear', '_is_precip']]
+    current_conditions_df = pd.DataFrame(columns=['DATE', 'VAR', 'PREDICTION'])
+    current_conditions_df = \
+        current_conditions_df.append(pd.Series([last_reading['DATE'], 'Temp', last_reading['Temp']]
+                                               , index=current_conditions_df.columns), ignore_index=True)
+    current_conditions_df = \
+        current_conditions_df.append(pd.Series([last_reading['DATE'], 'WindSpeed', last_reading['WindSpeed']]
+                                               , index=current_conditions_df.columns), ignore_index=True)
+    current_conditions_df = \
+        current_conditions_df.append(pd.Series([last_reading['DATE'], '_is_clear', last_reading['_is_clear']]
+                                               , index=current_conditions_df.columns), ignore_index=True)
+    current_conditions_df = \
+        current_conditions_df.append(pd.Series([last_reading['DATE'], '_is_precip', last_reading['_is_precip']]
+                                               , index=current_conditions_df.columns), ignore_index=True)
+
+    print(current_conditions_df)
+    return current_conditions_df
+
+def format_forecast(predictions_df: pd.DataFrame):
+    formatted_df = pd.DataFrame(columns=['Timestamp', 'Temperature', 'Wind', 'Conditions'])
+
+    # One row per date
+    dates = predictions_df['DATE'].unique()
+    formatted_df['Timestamp'] = dates
+
+    for _date in dates:
+        temp = (predictions_df[(predictions_df['DATE'] == _date) &
+                               (predictions_df['VAR'] == 'Temp')])['PREDICTION'].values[0]
+        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Temperature'] = "{} F".format(int(temp))
+
+        wind = (predictions_df[(predictions_df['DATE'] == _date) &
+                               (predictions_df['VAR'] == 'WindSpeed')])['PREDICTION'].values[0]
+        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Wind'] = "{} mph".format(int(wind))
+
+        _is_clear = (predictions_df[(predictions_df['DATE'] == _date) &
+                               (predictions_df['VAR'] == '_is_clear')])['PREDICTION'].values[0]
+        _is_precip = (predictions_df[(predictions_df['DATE'] == _date) &
+                               (predictions_df['VAR'] == '_is_precip')])['PREDICTION'].values[0]
+        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Conditions'] = get_conditions(temp, _is_clear, _is_precip)
+
+    return formatted_df
 
 
-def format_forecast(predictions_df):
-    return predictions_df
+def get_conditions(temp, _is_clear, _is_precip):
+    # No Precipitation
+    if _is_clear == 1 and _is_precip == 0:
+        return 'Clear'
+    if _is_clear == 0 and _is_precip == 0:
+        return 'Cloudy'
 
+    # Precipitation (NOTE: figuring out type of precipitation from temperature is very approximate)
+    if temp < 30:
+        return 'Snow'
+    if temp >= 40:
+        return 'Rain'
+
+    return 'Winter Precipitation'
 
 # TODO - this is for testing not to break w.r.t. Flask Context. Explore a cleaner solution
 def get_logger():
