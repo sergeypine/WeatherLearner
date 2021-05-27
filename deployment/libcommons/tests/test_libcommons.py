@@ -98,6 +98,24 @@ def test_datastore_predictions():
     assert df['VAR'][1] == 'var1'
     assert df['PREDICTION'][1] == 105
 
+    # --- Add row
+    ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 18), 105)
+    df = ds.predictions_load()
+
+    assert len(df) == 3
+    assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
+    assert df['LOOK_AHEAD'][0] == 6
+    assert df['VAR'][0] == 'var1'
+    assert df['PREDICTION'][0] == 95
+    assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
+    assert df['LOOK_AHEAD'][1] == 12
+    assert df['VAR'][1] == 'var1'
+    assert df['PREDICTION'][1] == 105
+    assert df['DATE'].astype(str)[2] == '2015-05-01 10:00:00'
+    assert df['LOOK_AHEAD'][2] == 18
+    assert df['VAR'][2] == 'var1'
+    assert df['PREDICTION'][2] == 105
+
 
 def test_feature_set_builder_build_latest():
     """Verify the building of a Pandas DataFrame containing all features needed for a model to predict

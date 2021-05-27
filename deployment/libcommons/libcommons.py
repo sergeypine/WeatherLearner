@@ -155,9 +155,8 @@ class DataStore(object):
                             (existing_df['LOOK_AHEAD'] == prediction_target.lookahead)].index)
 
             existing_df = pd.concat([existing_df, df], ignore_index=True)
-            existing_df = existing_df.drop_duplicates(subset=['DATE', 'VAR', 'PREDICTION'])
-
             existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
+            existing_df = existing_df.drop_duplicates(subset=['DATE', 'VAR', 'LOOK_AHEAD'])
             existing_df = existing_df.sort_values(by=['DATE', 'LOOK_AHEAD'])
 
             existing_df.to_csv(target_file, index=False)
