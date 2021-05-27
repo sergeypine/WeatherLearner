@@ -27,5 +27,13 @@ def get_dates_for_forecast(conf: config.Config, forecast_time=None):
 
 def get_date_locations_to_retrieve(conf: config.Config):
     now_datetime = datetime.datetime.now(pytz.timezone(conf.TARGET_TIMEZONE))
+    return {}
+
+
+def missing_dates_to_prediction_timestamps(missing_dates):
+    #  TODO - cut off timestamps within MAX_LOOKBACK
     return []
 
+
+def get_missing_timestamp_prediction_targets(lookback_hours=24):
+    return {}

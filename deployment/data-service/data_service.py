@@ -39,9 +39,44 @@ def generate_forecast_job():
 def update_prediction_audit_job():
     logging.info("Start Backfill Job")
 
-    # (1)  date->location dictionary of readings we are missing
+    # (1a)  date->location dictionary of readings we are missing
     missing_dates_locations = data_service_utils.get_date_locations_to_retrieve(conf)
+    missing_dates = list(missing_dates_locations.keys())
+    missing_dates.sort()
 
+    # (1b) retrieve missing data
+    if len(missing_dates) > 0:
+        logging.info("Missing weather readings for the following dates will be backfilled: {}".format(missing_dates))
+        for missing_date in missing_dates:
+            for location in missing_dates_locations[missing_date]:
+                logging.info("Backfilling missing readings, location {}, date {}".format(location, missing_date))
+                reading_retriever.retrieve_for_date_and_location(missing_date, location)
+
+        # (2a) Perform predictions for the missing dates we just retrieved
+        hourly_timestamps = data_service_utils.missing_dates_to_prediction_timestamps(missing_dates)
+        for hourly_ts in hourly_timestamps:
+            for prediction_target in conf.ALL_PREDICTION_TARGETS:
+                logging.info("Backfilling recent prediction for Target {}, base TS {}".format(prediction_target, hourly_ts))
+                predictor.predict_for_target_and_base_time(prediction_target, hourly_ts)
+    else:
+        logging.info("No Weather Readings are missing")
+
+    # (2b) Perform predictions within current forecast window that are missing that the above may not cover
+    missing_timestamp_prediction_targets = \
+        data_service_utils.get_missing_timestamp_prediction_targets(lookback_hours=24)
+    missing_timestamps = list(missing_timestamp_prediction_targets.keys())
+    missing_timestamps.sort()
+
+    if len (missing_timestamps) > 0:
+        logging.info("Recent predictions for the following TS will be backfilled: {}".format(missing_timestamps))
+        for missing_ts in missing_timestamps:
+            prediction_targets = missing_timestamp_prediction_targets[missing_ts]
+            for prediction_target in prediction_targets:
+                logging.info("Backfilling recent prediction for Target {}, base Timestamp{}".format(
+                    prediction_target, missing_ts))
+                predictor.predict_for_target_and_base_time(prediction_target, missing_ts)
+    else:
+        logging.info("No recent predictions are missing")
 
     logging.info("End Backfill Job")
 

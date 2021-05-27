@@ -33,9 +33,10 @@ PREDICTION_TARGET_WINDSPEED_24H = PredictionTarget('WindSpeed', 24)
 
 class Config(object):
     # =========================================================
-    DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 2
-    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 1
+    DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 15
+    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 5
     DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 60
+    DATA_SERVICE_BACKFILL_BATCH_SIZE = 5
     DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
     DATA_SERVICE_LOG_LEVEL = 'INFO'
     DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
