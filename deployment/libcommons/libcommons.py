@@ -169,6 +169,19 @@ class DataStore(object):
         return pd.read_csv(target_file, parse_dates=['DATE'])
         pass
 
+    def actual_weather_history_save(self, actual_weather_df):
+        target_file = "{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        if not path.exists(target_file):
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+        actual_weather_df.to_csv(target_file, index=False)
+
+    def actual_weather_history_load(self):
+        target_file = "{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        if not os.path.exists(target_file):
+            return None
+
+        return pd.read_csv(target_file, parse_dates=['DATE'])
+
 
 # =============================================================================
 # =============================================================================

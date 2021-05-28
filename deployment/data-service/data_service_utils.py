@@ -3,6 +3,7 @@ import sys
 import time
 
 import pandas as pd
+import numpy as np
 import pytz
 
 import libcommons.libcommons
@@ -88,3 +89,22 @@ def get_missing_timestamp_prediction_targets(conf: config.Config):
         current_datetime = current_datetime + datetime.timedelta(hours=1)
 
     return timestamp_prediction_targets
+
+
+def get_actual_weather_history(conf: config.Config):
+    readings = libcommons.libcommons.DataStore().readings_load(conf.TARGET_LOCATION)
+    actual_weather_history = pd.DataFrame()
+
+    for var_name in conf.PREDICTED_VARIABLE_AHI:
+        actual_weather_history[var_name] = \
+            list(readings[[var_name]].rolling(window=2 * conf.PREDICTED_VARIABLE_AHI[var_name] + 1,
+                                            min_periods=1, center=True).mean().values)
+
+        if conf.PREDICTED_VARIABLE_AGG_RULES[var_name] == 'ALL':
+            actual_weather_history[var_name] = np.where(actual_weather_history[var_name] == 1, 1, 0)
+        elif conf.PREDICTED_VARIABLE_AGG_RULES[var_name] == 'ANY':
+            actual_weather_history[var_name] = np.where(actual_weather_history[var_name] == 0, 0, 1)
+
+        actual_weather_history[var_name] = actual_weather_history[var_name].astype(int)
+    actual_weather_history['DATE'] = readings['DATE']
+    return actual_weather_history

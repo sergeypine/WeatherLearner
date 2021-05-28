@@ -143,7 +143,7 @@ def test_get_missing_timestamp_prediction_targets():
             del predictions[1]
             del predictions[2]
             all_predictions.extend(predictions)
-            #--
+            # --
         all_predictions.extend(make_day_of_predictions(now_datetime, pt_temp_6h))
         all_predictions.extend(make_day_of_predictions(now_datetime, pt_temp_12h))
         all_predictions.extend(make_day_of_predictions(now_datetime, pt_windspeed_6h))
@@ -173,6 +173,64 @@ def test_get_missing_timestamp_prediction_targets():
 
     finally:
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
+
+
+def test_get_actual_weather_history():
+    """Test reading aggregation that mimicks model training"""
+    try:
+        old_ds_path = config.Config.DATA_STORE_BASE_DIR
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
+        clear_data_store()
+
+        conf = copy.deepcopy(config.Config)
+        conf.PREDICTED_VARIABLE_AHI = {
+            '_is_precip': 3,
+            '_is_clear': 3,
+            'Temp': 1,
+            'WindSpeed': 2,
+        }
+        conf.PREDICTED_VARIABLE_AGG_RULES = {
+            '_is_precip': 'ANY',
+            '_is_clear': 'ALL',
+            'Temp': 'AVG',
+            'WindSpeed': 'AVG',
+        }
+
+        date_rows = ['2018-05-05 10:00:00', '2018-05-05 11:00:00', '2018-05-05 12:00:00', '2018-05-05 13:00:00',
+                     '2018-05-05 14:00:00', '2018-05-05 15:00:00', '2018-05-05 16:00:00', '2018-05-05 17:00:00',
+                     '2018-05-05 18:00:00']
+        temp_rows =     [50, 51, 52, 53, 54, 55, 55, 54, 53]
+        expected_temp = [50, 51, 52, 53, 54, 54, 54, 54, 53]
+
+        wind_rows =     [10, 11, 12, 13, 12, 11, 10, 9, 8]
+        expected_wind = [11, 11, 11, 11, 11, 11, 10, 9, 9]
+
+        is_clear_rows =     [0, 1, 1, 1, 1, 1, 1, 1, 0]
+        expected_is_clear = [0, 0, 0, 0, 1, 0, 0, 0, 0]
+
+        is_precip_rows =    [1, 0, 0, 0, 0, 0, 0, 0, 1]
+        expected_is_precip =[1, 1, 1, 1, 0, 1, 1, 1, 1]
+
+        readings = pd.DataFrame.from_dict({
+            'DATE': date_rows,
+            'Temp': temp_rows,
+            'WindSpeed': wind_rows,
+            '_is_clear': is_clear_rows,
+            '_is_precip': is_precip_rows
+        })
+        libcommons.libcommons.DataStore().readings_append(conf.TARGET_LOCATION, readings)
+
+        actual_weather_history = data_service_utils.get_actual_weather_history(conf)
+
+        assert list(actual_weather_history['DATE'].values) == date_rows
+        assert list(actual_weather_history['Temp'].values) == expected_temp
+        assert list(actual_weather_history['WindSpeed'].values) == expected_wind
+        assert list(actual_weather_history['_is_clear'].values) == expected_is_clear
+        assert list(actual_weather_history['_is_precip'].values) == expected_is_precip
+
+    finally:
+        config.Config.DATA_STORE_BASE_DIR = old_ds_path
+
 
 #  -----------------------------------------------------------------
 #  --- Helper routines
