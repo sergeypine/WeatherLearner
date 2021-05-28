@@ -40,8 +40,9 @@ def test_get_date_locations_to_retrieve():
     # TODO - consider testing that BATCH_SIZE is  respected too
     try:
         old_ds_path = config.Config.DATA_STORE_BASE_DIR
-        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
-        clear_data_store()
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
         conf = copy.deepcopy(config.Config)
         conf.LOCATION_CODES = {'Loc1': 'CODE1', 'Loc2': 'CODE2'}
@@ -81,6 +82,7 @@ def test_get_date_locations_to_retrieve():
         assert "Loc2" in date_locations[date2]
         assert "Loc1" in date_locations[date3]
     finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
@@ -88,8 +90,9 @@ def test_get_missing_timestamp_prediction_targets():
     try:
         """Verify logic for finding missing predictions finds all of them provided necessary readings exist"""
         old_ds_path = config.Config.DATA_STORE_BASE_DIR
-        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
-        clear_data_store()
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
         conf = copy.deepcopy(config.Config)
 
@@ -154,24 +157,24 @@ def test_get_missing_timestamp_prediction_targets():
         missing_timestamp_prediction_targets = data_service_utils.get_missing_timestamp_prediction_targets(conf)
         missing_timestamps = list(missing_timestamp_prediction_targets.keys())
         assert len(missing_timestamps) == 5
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 0, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 0, 0)][0] == pt_temp_6h
+        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)][0] == pt_temp_6h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 23, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 23, 0)][0] == pt_temp_12h
+        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)][0] == pt_temp_12h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 1, 0)]) == 2
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 1, 0)][0] == pt_windspeed_6h
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 1, 0)][1] == pt_windspeed_12h
+        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)]) == 2
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][0] == pt_windspeed_6h
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][1] == pt_windspeed_12h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 2, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 2, 0)][0] == pt_windspeed_6h
+        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)][0] == pt_windspeed_6h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 3, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(2021, 5, 26, 3, 0)][0] == pt_windspeed_12h
-
+        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)][0] == pt_windspeed_12h
 
     finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
@@ -179,8 +182,9 @@ def test_get_actual_weather_history():
     """Test reading aggregation that mimicks model training"""
     try:
         old_ds_path = config.Config.DATA_STORE_BASE_DIR
-        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
-        clear_data_store()
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
         conf = copy.deepcopy(config.Config)
         conf.PREDICTED_VARIABLE_AHI = {
@@ -222,13 +226,14 @@ def test_get_actual_weather_history():
 
         actual_weather_history = data_service_utils.get_actual_weather_history(conf)
 
-        assert list(actual_weather_history['DATE'].values) == date_rows
+        assert 'DATE' in actual_weather_history.columns.values
         assert list(actual_weather_history['Temp'].values) == expected_temp
         assert list(actual_weather_history['WindSpeed'].values) == expected_wind
         assert list(actual_weather_history['_is_clear'].values) == expected_is_clear
         assert list(actual_weather_history['_is_precip'].values) == expected_is_precip
 
     finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 

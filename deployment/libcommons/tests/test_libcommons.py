@@ -12,109 +12,116 @@ import config
 import libcommons
 
 
-@pytest.fixture(scope="session", autouse=True)
-def common(request):
-    def remove_test_dir():
+def test_datastore_readings():
+    """Verify correct concatenation of new readings and that duplicates are eliminated"""
+    try:
+        old_ds_path = config.Config.DATA_STORE_BASE_DIR
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
         if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
             shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
-    remove_test_dir()
-    request.addfinalizer(remove_test_dir)
+        nine = pd.Timestamp('2020-02-15 09:00:00')
+        ten = pd.Timestamp('2020-02-15 10:00:00')
+        eleven = pd.Timestamp('2020-02-15 11:00:00')
+        ds = libcommons.DataStore()
 
+        ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [ten], 'data': ['data1']}))
+        df = ds.readings_load('Rio')
+        assert len(df) == 1
+        assert df.iloc[0]['data'] == 'data1'
 
-def test_datastore_readings():
-    """Verify correct concatenation of new readings and that duplicates are eliminated"""
+        ds.readings_append('Rio', pd.DataFrame.from_dict(
+            {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2']}))
+        df = ds.readings_load('Rio')
 
-    nine = pd.Timestamp('2020-02-15 09:00:00')
-    ten = pd.Timestamp('2020-02-15 10:00:00')
-    eleven = pd.Timestamp('2020-02-15 11:00:00')
-    ds = libcommons.DataStore()
+        assert len(df) == 2
+        assert df.iloc[0]['data'] == 'data1_replaced'
+        assert df.iloc[1]['data'] == 'data2'
 
-    ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [ten], 'data': ['data1']}))
-    df = ds.readings_load('Rio')
-    assert len(df) == 1
-    assert df.iloc[0]['data'] == 'data1'
+        ds.readings_append('Rio', pd.DataFrame.from_dict(
+            {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2_replaced']}))
+        df = ds.readings_load('Rio')
+        assert len(df) == 2
+        assert df.iloc[0]['data'] == 'data1_replaced'
+        assert df.iloc[1]['data'] == 'data2_replaced'
 
-    ds.readings_append('Rio', pd.DataFrame.from_dict(
-        {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2']}))
-    df = ds.readings_load('Rio')
-
-    assert len(df) == 2
-    assert df.iloc[0]['data'] == 'data1_replaced'
-    assert df.iloc[1]['data'] == 'data2'
-
-    ds.readings_append('Rio', pd.DataFrame.from_dict(
-        {'DATE': [ten, eleven], 'data': ['data1_replaced', 'data2_replaced']}))
-    df = ds.readings_load('Rio')
-    assert len(df) == 2
-    assert df.iloc[0]['data'] == 'data1_replaced'
-    assert df.iloc[1]['data'] == 'data2_replaced'
-
-    ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [nine], 'data': ['data3']}))
-    df = ds.readings_load('Rio')
-    assert len(df) == 3
-    assert df.iloc[0]['data'] == 'data3'
-    assert df.iloc[1]['data'] == 'data1_replaced'
-    assert df.iloc[2]['data'] == 'data2_replaced'
+        ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [nine], 'data': ['data3']}))
+        df = ds.readings_load('Rio')
+        assert len(df) == 3
+        assert df.iloc[0]['data'] == 'data3'
+        assert df.iloc[1]['data'] == 'data1_replaced'
+        assert df.iloc[2]['data'] == 'data2_replaced'
+    finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
+        config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
 def test_datastore_predictions():
     """Verify correct concatenation of new prediction and overriding with latest value"""
-    ds = libcommons.DataStore()
-    ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 6), 100)
-    df = ds.predictions_load()
+    try:
+        old_ds_path = config.Config.DATA_STORE_BASE_DIR
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
-    assert len(df) == 1
-    assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][0] == 6
-    assert df['VAR'][0] == 'var1'
-    assert df['PREDICTION'][0] == 100
+        ds = libcommons.DataStore()
+        ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 6), 100)
+        df = ds.predictions_load()
 
-    #  --- Add a row
-    ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 12), 105)
-    df = ds.predictions_load()
+        assert len(df) == 1
+        assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][0] == 6
+        assert df['VAR'][0] == 'var1'
+        assert df['PREDICTION'][0] == 100
 
-    assert len(df) == 2
-    assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][0] == 6
-    assert df['VAR'][0] == 'var1'
-    assert df['PREDICTION'][0] == 100
-    assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][1] == 12
-    assert df['VAR'][1] == 'var1'
-    assert df['PREDICTION'][1] == 105
+        #  --- Add a row
+        ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 12), 105)
+        df = ds.predictions_load()
 
-    # --- Override one row
-    ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 6), 95)
-    df = ds.predictions_load()
+        assert len(df) == 2
+        assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][0] == 6
+        assert df['VAR'][0] == 'var1'
+        assert df['PREDICTION'][0] == 100
+        assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][1] == 12
+        assert df['VAR'][1] == 'var1'
+        assert df['PREDICTION'][1] == 105
 
-    assert len(df) == 2
-    assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][0] == 6
-    assert df['VAR'][0] == 'var1'
-    assert df['PREDICTION'][0] == 95
-    assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][1] == 12
-    assert df['VAR'][1] == 'var1'
-    assert df['PREDICTION'][1] == 105
+        # --- Override one row
+        ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 6), 95)
+        df = ds.predictions_load()
 
-    # --- Add row
-    ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 18), 105)
-    df = ds.predictions_load()
+        assert len(df) == 2
+        assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][0] == 6
+        assert df['VAR'][0] == 'var1'
+        assert df['PREDICTION'][0] == 95
+        assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][1] == 12
+        assert df['VAR'][1] == 'var1'
+        assert df['PREDICTION'][1] == 105
 
-    assert len(df) == 3
-    assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][0] == 6
-    assert df['VAR'][0] == 'var1'
-    assert df['PREDICTION'][0] == 95
-    assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][1] == 12
-    assert df['VAR'][1] == 'var1'
-    assert df['PREDICTION'][1] == 105
-    assert df['DATE'].astype(str)[2] == '2015-05-01 10:00:00'
-    assert df['LOOK_AHEAD'][2] == 18
-    assert df['VAR'][2] == 'var1'
-    assert df['PREDICTION'][2] == 105
+        # --- Add row
+        ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 18), 105)
+        df = ds.predictions_load()
+
+        assert len(df) == 3
+        assert df['DATE'].astype(str)[0] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][0] == 6
+        assert df['VAR'][0] == 'var1'
+        assert df['PREDICTION'][0] == 95
+        assert df['DATE'].astype(str)[1] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][1] == 12
+        assert df['VAR'][1] == 'var1'
+        assert df['PREDICTION'][1] == 105
+        assert df['DATE'].astype(str)[2] == '2015-05-01 10:00:00'
+        assert df['LOOK_AHEAD'][2] == 18
+        assert df['VAR'][2] == 'var1'
+        assert df['PREDICTION'][2] == 105
+    finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
+        config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
 def test_feature_set_builder_build_latest():

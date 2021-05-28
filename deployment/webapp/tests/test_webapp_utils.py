@@ -16,7 +16,7 @@ import libcommons
 def test_get_current_conditions_df():
     try:
         old_ds_path = config.Config.DATA_STORE_BASE_DIR
-        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
 
         if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
             shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
@@ -83,15 +83,15 @@ def test_get_current_conditions_df():
 
         # next_ds entry imitates a padded entry and should be ignored
 
-
     finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
 def test_get_forecast_df():
     try:
         old_ds_path = config.Config.DATA_STORE_BASE_DIR
-        config.Config.DATA_STORE_BASE_DIR = "tests/test_data"
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
 
         if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
             shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
@@ -126,6 +126,7 @@ def test_get_forecast_df():
         assert forecast.iloc[2]['VAR'] == 'Temp'
 
     finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 
