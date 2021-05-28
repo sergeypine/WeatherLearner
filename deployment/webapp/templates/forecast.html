@@ -8,6 +8,10 @@
     <body>
         <h3 style="padding-top: 10px; padding-left: 10px" >Chicago Weather Predictor: Current Forecast</h3>
         <hr>
+        <a style="padding-left: 10px" href=predict_audit>
+            <button class="pure-button pure-button-primary">Prediction Audit</button>
+        </a>
+        <hr>
         <p style="padding-left: 10px">Current Time in Chicago is {{ current_time }}</p>
 
         {% for table_info in table_info %}
@@ -33,9 +37,5 @@
         </table>
         {% endfor %}
         <hr>
-
-        <a style="padding-left: 10px" href=predict_audit>
-            <button class="pure-button pure-button-primary">Prediction Audit</button>
-        </a>
     </body>
 </html>

@@ -3,6 +3,7 @@ import logging
 import sys
 
 import pandas as pd
+import numpy as np
 import pytz
 from datetime import timedelta
 import numpy
@@ -77,6 +78,7 @@ def get_current_conditions_df():
     print(current_conditions_df)
     return current_conditions_df
 
+
 def format_forecast(predictions_df: pd.DataFrame):
     formatted_df = pd.DataFrame(columns=['Timestamp', 'Temperature', 'Wind', 'Conditions'])
 
@@ -100,6 +102,67 @@ def format_forecast(predictions_df: pd.DataFrame):
         formatted_df.loc[formatted_df['Timestamp'] == _date, 'Conditions'] = get_conditions(temp, _is_clear, _is_precip)
 
     return formatted_df
+
+
+def get_prediction_audit_df(target_var):
+    data_store = libcommons.libcommons.DataStore()
+    actual_weather_history = data_store.actual_weather_history_load()
+    predictions = data_store.predictions_load()
+
+    if actual_weather_history is None or predictions is None:
+        return None
+
+    # Trim weather history and predictions to only include data for target var
+    predictions = predictions[predictions['VAR'] == target_var]
+    actual_weather_history = actual_weather_history[['DATE', target_var]]
+
+    # Merge history and predictions
+    merge_df = pd.DataFrame.merge(actual_weather_history, predictions, on=['DATE'])
+    merge_df = merge_df.rename(columns={target_var: 'Actual'})
+
+    # Create empty result DF with the right columns
+    audit_columns = ['DATE', 'Actual']
+    lookaheads = map(lambda pt: pt.lookahead,
+                     filter(lambda pt: pt.var == target_var, config.Config.ALL_PREDICTION_TARGETS))
+    lookahead_cols = map(lambda l: "+{}h".format(l), lookaheads)
+    audit_columns.extend(lookahead_cols)
+    audit_df = pd.DataFrame(columns=audit_columns)
+
+    # One row per DATE
+    audit_df['DATE'] = merge_df['DATE'].unique()
+
+    # Populate result DF row by row
+    for index, row in merge_df.iterrows():
+        ts = row['DATE']
+        audit_df.loc[audit_df['DATE'] == ts, 'Actual'] = row['Actual']
+
+        la = row['LOOK_AHEAD']
+        audit_df.loc[audit_df['DATE'] == ts, "+{}h".format(la)] = row['PREDICTION']
+
+    return audit_df
+
+
+def format_yesno_tbl(yesno_tbl):
+    for col in yesno_tbl.columns:
+        if col != 'DATE':
+            yesno_tbl[col] = np.where(yesno_tbl[col] == 0, 'No', 'Yes')
+    return yesno_tbl
+
+
+def format_numeric_tbl(numeric_tbl):
+    for col in numeric_tbl.columns:
+        if col != 'DATE':
+            numeric_tbl[col] = numeric_tbl[col].astype(int)
+
+    return  numeric_tbl
+
+
+def reduce_audit_granurality(audit_df):
+    # TODO - use WEBAPP_HRS_INCLUDED_AUDIT instead of hardcoding the hours
+    return audit_df[(audit_df['DATE'].dt.hour == 2) |
+                    (audit_df['DATE'].dt.hour == 8) |
+                    (audit_df['DATE'].dt.hour == 14) |
+                    (audit_df['DATE'].dt.hour == 20)]
 
 
 def get_conditions(temp, _is_clear, _is_precip):

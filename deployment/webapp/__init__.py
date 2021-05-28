@@ -5,6 +5,7 @@ from logging.config import dictConfig
 import pandas as pd
 from flask import Flask
 from flask import render_template
+import numpy as np
 import datetime
 import pytz
 sys.path.insert(1, '../')
@@ -53,10 +54,59 @@ def forecast():
         return render_template('forecast_nodata.html', current_time=current_time)
 
 
-
 @app.route('/predict_audit')
 def predict_audit():
-    return render_template("audit.html")
+    logging.info("Received /predict_audit request")
+
+    # TODO - consider caching in app context
+    temp_audit = webapp_utils.get_prediction_audit_df('Temp')
+    wind_audit = webapp_utils.get_prediction_audit_df('WindSpeed')
+    _is_clear_audit = webapp_utils.get_prediction_audit_df('_is_clear')
+    _is_precip_audit = webapp_utils.get_prediction_audit_df('_is_precip')
+
+    data_present = all(audit is not None and len(audit) > 0
+                       for audit in [temp_audit, wind_audit, _is_clear_audit, _is_precip_audit])
+
+    if data_present:
+        #Get rid of NANs
+        for audit in [temp_audit, wind_audit, _is_clear_audit, _is_precip_audit]:
+            audit.dropna(inplace=True)
+
+        # Do not include every hour, that is overwhelming!
+        temp_audit = webapp_utils.reduce_audit_granurality(temp_audit)
+        wind_audit = webapp_utils.reduce_audit_granurality(wind_audit)
+        _is_clear_audit = webapp_utils.reduce_audit_granurality(_is_clear_audit)
+        _is_precip_audit = webapp_utils.reduce_audit_granurality(_is_precip_audit)
+
+        # Change 0's and 1's no NO's and YES's
+        _is_clear_audit = webapp_utils.format_yesno_tbl(_is_clear_audit)
+        _is_precip_audit = webapp_utils.format_yesno_tbl(_is_precip_audit)
+
+        # Convert floats to ints
+        temp_audit = webapp_utils.format_numeric_tbl(temp_audit)
+        wind_audit = webapp_utils.format_numeric_tbl(wind_audit)
+
+        # Drop minutes
+        for audit in [temp_audit, wind_audit, _is_clear_audit, _is_precip_audit]:
+            audit['DATE'] = audit['DATE'].astype("datetime64").dt.strftime("%m-%d-%y %H:%M")
+
+        table_info = [
+            {'title': 'Temperature',
+             'column_names': temp_audit.columns.values,
+             'row_data': list(temp_audit.values.tolist())},
+            {'title': 'Wind',
+             'column_names': wind_audit.columns.values,
+             'row_data': list(wind_audit.values.tolist())},
+            {'title': 'Clear Sky',
+             'column_names': _is_clear_audit.columns.values,
+             'row_data': list(_is_clear_audit.values.tolist())},
+            {'title': 'Precipitation',
+             'column_names': _is_precip_audit.columns.values,
+             'row_data': list(_is_precip_audit.values.tolist())},
+        ]
+        return render_template("audit.html", table_info=table_info)
+    else:
+        return render_template("audit_nodata.html")
 
 
 @app.route('/model_info')

@@ -7,13 +7,38 @@
     </head>
     <body>
         <h3 style="padding-top: 10px; padding-left: 10px">Chicago Weather Predictor: Prediction Audit</h3>
-
         <hr>
-        <h3 style="padding-left: 10px">Under Construction :( </h3>
-        <hr>
-
         <a style="padding-left: 10px" href=forecast>
             <button class="pure-button pure-button-primary">Forecast</button>
         </a>
+        <hr>
+        <div class="pure-g">
+        {% for table_info in table_info %}
+            <div class="pure-u-1-4">
+                <h4 style="padding-left: 10px">{{ table_info.title }}</h4>
+                <table valign="top" style="padding-left: 10px" class="pure-table pure-table-bordered">
+                <thead>
+                    <tr>
+                        {% for col in table_info.column_names %}
+                        <th>{{col}}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_info.row_data %}
+                    <tr>
+                        {% for row_cell in row %}
+                        <td>{{row_cell}}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+                {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+
+        <hr>
+
     </body>
 </html>

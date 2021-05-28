@@ -3,6 +3,7 @@ import sys
 import time
 import pytz
 import schedule
+import concurrent.futures
 import logging
 
 sys.path.insert(1, '../')
@@ -20,10 +21,12 @@ def generate_forecast_job():
     forecast_dates = data_service_utils.get_dates_for_forecast(conf)
 
     # (1) Get Weather Readings for all locations and for the last 2 days
-    for location in conf.LOCATION_CODES:
-        for forecast_date in forecast_dates:
+    for forecast_date in forecast_dates:
+        retriever_executor = concurrent.futures.ThreadPoolExecutor(max_workers=conf.DATA_SERVICE_NUM_RETRIEVER_WORKERS)
+        for location in conf.LOCATION_CODES:
             logging.info("Retrieving data for location {}, date {}".format(location, forecast_date))
-            reading_retriever.retrieve_for_date_and_location(forecast_date, location)
+            retriever_executor.submit(retriever_dict[location].retrieve_for_date_and_location, forecast_date, location)
+        retriever_executor.shutdown(wait=True)
 
     # (2) Generate Forecast
     for prediction_target in conf.ALL_PREDICTION_TARGETS:
@@ -51,9 +54,12 @@ def backfill_readings_job():
     if len(missing_dates) > 0:
         logging.info("Missing weather readings for the following dates will be backfilled: {}".format(missing_dates))
         for missing_date in missing_dates:
+            retriever_executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=conf.DATA_SERVICE_NUM_RETRIEVER_WORKERS)
             for location in missing_dates_locations[missing_date]:
                 logging.info("Backfilling missing readings, location {}, date {}".format(location, missing_date))
-                reading_retriever.retrieve_for_date_and_location(missing_date, location)
+                retriever_executor.submit(retriever_dict[location].retrieve_for_date_and_location, missing_date, location)
+            retriever_executor.shutdown(wait=True)
     else:
         logging.info("No Weather Readings are missing")
 
@@ -95,6 +101,7 @@ def update_actual_weather_history_job():
 
     logging.info("!!! END Update Actual Weather History Job")
 
+
 def main():
     # Pre-execute the jobs
     generate_forecast_job()
@@ -119,6 +126,8 @@ if __name__ == "__main__":
                         format=conf.DATA_SERVICE_LOG_FORMAT,
                         level=conf.DATA_SERVICE_LOG_LEVEL)
 
-    reading_retriever = reading_retriever.ReadingRetriever()
     predictor = predictor.Predictor()
+    retriever_dict = {}
+    for location in conf.LOCATION_CODES:
+        retriever_dict[location] = reading_retriever.ReadingRetriever()
     main()

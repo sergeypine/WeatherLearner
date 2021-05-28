@@ -34,9 +34,10 @@ PREDICTION_TARGET_WINDSPEED_24H = PredictionTarget('WindSpeed', 24)
 class Config(object):
     # =========================================================
     DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 15
-    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 5
-    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 60
-    DATA_SERVICE_BACKFILL_BATCH_SIZE = 3
+    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 3
+    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 30
+    DATA_SERVICE_BACKFILL_BATCH_SIZE = 2
+    DATA_SERVICE_NUM_RETRIEVER_WORKERS = 6
     DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
     DATA_SERVICE_LOG_LEVEL = 'INFO'
     DATA_SERVICE_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
@@ -46,6 +47,7 @@ class Config(object):
     WEBAPP_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
 
     WEBAPP_MAX_READING_DELAY_HOURS = 3
+    WEBAPP_HRS_INCLUDED_AUDIT = [2, 8, 14, 20]
     # =========================================================
     DATA_STORE_BASE_DIR = "../data_store"
     MODELS_BASE_DIR = "../pretrained"
