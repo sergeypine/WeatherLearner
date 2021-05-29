@@ -87,6 +87,7 @@ def format_forecast(predictions_df: pd.DataFrame):
     formatted_df['Timestamp'] = dates
 
     for _date in dates:
+        # NOTE - race condition here during the first run of backfill (since forecasts are missing for some vars)
         temp = (predictions_df[(predictions_df['DATE'] == _date) &
                                (predictions_df['VAR'] == 'Temp')])['PREDICTION'].values[0]
         formatted_df.loc[formatted_df['Timestamp'] == _date, 'Temperature'] = "{} F".format(int(temp))
@@ -102,44 +103,6 @@ def format_forecast(predictions_df: pd.DataFrame):
         formatted_df.loc[formatted_df['Timestamp'] == _date, 'Conditions'] = get_conditions(temp, _is_clear, _is_precip)
 
     return formatted_df
-
-
-def get_prediction_audit_df(target_var):
-    data_store = libcommons.libcommons.DataStore()
-    actual_weather_history = data_store.actual_weather_history_load()
-    predictions = data_store.predictions_load()
-
-    if actual_weather_history is None or predictions is None:
-        return None
-
-    # Trim weather history and predictions to only include data for target var
-    predictions = predictions[predictions['VAR'] == target_var]
-    actual_weather_history = actual_weather_history[['DATE', target_var]]
-
-    # Merge history and predictions
-    merge_df = pd.DataFrame.merge(actual_weather_history, predictions, on=['DATE'])
-    merge_df = merge_df.rename(columns={target_var: 'Actual'})
-
-    # Create empty result DF with the right columns
-    audit_columns = ['DATE', 'Actual']
-    lookaheads = map(lambda pt: pt.lookahead,
-                     filter(lambda pt: pt.var == target_var, config.Config.ALL_PREDICTION_TARGETS))
-    lookahead_cols = map(lambda l: "+{}h".format(l), lookaheads)
-    audit_columns.extend(lookahead_cols)
-    audit_df = pd.DataFrame(columns=audit_columns)
-
-    # One row per DATE
-    audit_df['DATE'] = merge_df['DATE'].unique()
-
-    # Populate result DF row by row
-    for index, row in merge_df.iterrows():
-        ts = row['DATE']
-        audit_df.loc[audit_df['DATE'] == ts, 'Actual'] = row['Actual']
-
-        la = row['LOOK_AHEAD']
-        audit_df.loc[audit_df['DATE'] == ts, "+{}h".format(la)] = row['PREDICTION']
-
-    return audit_df
 
 
 def format_yesno_tbl(yesno_tbl):

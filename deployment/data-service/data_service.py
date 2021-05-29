@@ -79,27 +79,36 @@ def backfill_predictions_job():
         logging.info("Recent predictions for the following TS will be backfilled: {}".format(missing_timestamps))
         for missing_ts in missing_timestamps:
             prediction_targets = missing_timestamp_prediction_targets[missing_ts]
+            #predictor_executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(conf.ALL_PREDICTION_TARGETS))
             for prediction_target in prediction_targets:
                 logging.info("Backfilling recent prediction for Target {}, base Timestamp {}".format(
                     prediction_target, missing_ts))
+                #predictor_executor.submit(predictor.predict_for_target_and_base_time, prediction_target, missing_ts)
                 predictor.predict_for_target_and_base_time(prediction_target, missing_ts)
+            #predictor_executor.shutdown(wait=True)
     else:
         logging.info("No recent predictions are missing")
 
     logging.info("!!! END Backfill Predictions Job")
 
 
-def update_actual_weather_history_job():
-    """Updates actual weather history (to be used for prediction audit functionality)
-        NOTE: Weather History is not same as readings because models are trained on values aggregated over time windows
-    """
-    logging.info("!!! START Update Actual Weather History Job")
+def update_prediction_audit_job():
+    """Updates predictions audit"""
 
+    logging.info("!!! START Update Prediction Audit Job")
+
+    # NOTE: Weather History is not same as readings because models are trained on values aggregated over time windows
     actual_weather_history_df = data_service_utils.get_actual_weather_history(conf)
     libcommons.libcommons.DataStore().actual_weather_history_save(actual_weather_history_df)
     logging.info("Saved Actual Weather History conaining {} datapoints".format(len(actual_weather_history_df)))
 
-    logging.info("!!! END Update Actual Weather History Job")
+    all_target_vars = conf.PREDICTED_VARIABLE_AHI.keys()
+    for target_var in all_target_vars:
+        audit_df = data_service_utils.get_prediction_audit_df(target_var)
+        libcommons.libcommons.DataStore().prediction_audit_save(target_var, audit_df)
+        logging.info("Saved {} audit rows for variable {}".format(len(audit_df), target_var))
+
+    logging.info("!!! END Update Prediction Audit Job")
 
 
 def main():
@@ -107,14 +116,14 @@ def main():
     generate_forecast_job()
     backfill_readings_job()
     backfill_predictions_job()
-    update_actual_weather_history_job()
+    update_prediction_audit_job()
 
     # Keep running the jobs on a schedule
     schedule.every(conf.DATA_SERVICE_FORECAST_INTERVAL_MINUTES).minutes.do(generate_forecast_job)
 
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_readings_job)
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_predictions_job)
-    schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_actual_weather_history_job)
+    schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_prediction_audit_job)
     while 1:
         schedule.run_pending()
         time.sleep(1)

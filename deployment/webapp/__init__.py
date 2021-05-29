@@ -59,10 +59,10 @@ def predict_audit():
     logging.info("Received /predict_audit request")
 
     # TODO - consider caching in app context
-    temp_audit = webapp_utils.get_prediction_audit_df('Temp')
-    wind_audit = webapp_utils.get_prediction_audit_df('WindSpeed')
-    _is_clear_audit = webapp_utils.get_prediction_audit_df('_is_clear')
-    _is_precip_audit = webapp_utils.get_prediction_audit_df('_is_precip')
+    temp_audit = libcommons.libcommons.DataStore().prediction_audit_load('Temp')
+    wind_audit = libcommons.libcommons.DataStore().prediction_audit_load('WindSpeed')
+    _is_clear_audit = libcommons.libcommons.DataStore().prediction_audit_load('_is_clear')
+    _is_precip_audit = libcommons.libcommons.DataStore().prediction_audit_load('_is_precip')
 
     data_present = all(audit is not None and len(audit) > 0
                        for audit in [temp_audit, wind_audit, _is_clear_audit, _is_precip_audit])

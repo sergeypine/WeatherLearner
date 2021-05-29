@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import os.path
 from os import path
+from ilock import ILock
 
 sys.path.insert(1, '../')
 import config
@@ -127,56 +128,62 @@ class DataStore(object):
             existing_df.to_csv(target_file, index=False)
 
     def readings_load(self, location):
-        target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
-        if not os.path.exists(target_file):
-            return None
-        df = pd.read_csv(target_file, parse_dates=['DATE'])
-        return df
+        return self.__load("{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location))
 
     def predictions_append(self, prediction_time, prediction_target, predicted_val):
-        target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        with ILock("weather-predictor-predictions-lock"):  # due to frequent access race conditions are common
+            target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
 
-        df = pd.DataFrame.from_dict({
-            'DATE': [prediction_time],
-            'LOOK_AHEAD': [prediction_target.lookahead],
-            'VAR': [prediction_target.var],
-            'PREDICTION': [predicted_val]
-        })
-        if not path.exists(target_file):
-            os.makedirs(os.path.dirname(target_file), exist_ok=True)
-            df.to_csv(target_file, index=False)
-        else:
-            existing_df = pd.read_csv(target_file, parse_dates=['DATE'])
+            df = pd.DataFrame.from_dict({
+                'DATE': [prediction_time],
+                'LOOK_AHEAD': [prediction_target.lookahead],
+                'VAR': [prediction_target.var],
+                'PREDICTION': [predicted_val]
+            })
+            if not path.exists(target_file):
+                os.makedirs(os.path.dirname(target_file), exist_ok=True)
+                df.to_csv(target_file, index=False)
+            else:
+                existing_df = pd.read_csv(target_file, parse_dates=['DATE'])
 
-            # Override the collision, if any, with this latest prediction
-            existing_df = existing_df.drop(
-                existing_df[(existing_df['DATE'] == prediction_time) &
-                            (existing_df['VAR'] == prediction_target.var) &
-                            (existing_df['LOOK_AHEAD'] == prediction_target.lookahead)].index)
+                # Override the collision, if any, with this latest prediction
+                existing_df = existing_df.drop(
+                    existing_df[(existing_df['DATE'] == prediction_time) &
+                                (existing_df['VAR'] == prediction_target.var) &
+                                (existing_df['LOOK_AHEAD'] == prediction_target.lookahead)].index)
 
-            existing_df = pd.concat([existing_df, df], ignore_index=True)
-            existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
-            existing_df = existing_df.drop_duplicates(subset=['DATE', 'VAR', 'LOOK_AHEAD'])
-            existing_df = existing_df.sort_values(by=['DATE', 'LOOK_AHEAD'])
+                existing_df = pd.concat([existing_df, df], ignore_index=True)
+                existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
+                existing_df = existing_df.drop_duplicates(subset=['DATE', 'VAR', 'LOOK_AHEAD'])
+                existing_df = existing_df.sort_values(by=['DATE', 'LOOK_AHEAD'])
 
-            existing_df.to_csv(target_file, index=False)
+                existing_df.to_csv(target_file, index=False)
 
     def predictions_load(self):
-        target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
-        if not os.path.exists(target_file):
-            return None
-
-        return pd.read_csv(target_file, parse_dates=['DATE'])
-        pass
+        with ILock('weather-predictor-predictions-lock'):  # due to frequent access race conditions are common
+            return self.__load("{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR))
 
     def actual_weather_history_save(self, actual_weather_df):
-        target_file = "{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR)
-        if not path.exists(target_file):
-            os.makedirs(os.path.dirname(target_file), exist_ok=True)
-        actual_weather_df.to_csv(target_file, index=False)
+        self.__save_overwrite("{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR), actual_weather_df)
 
     def actual_weather_history_load(self):
-        target_file = "{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        return self.__load("{}/actual_weather_history.csv".format(self.conf.DATA_STORE_BASE_DIR))
+
+    def prediction_audit_save(self, target_var, target_var_df):
+        self.__save_overwrite("{}/audits/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, target_var), target_var_df)
+
+    def prediction_audit_load(self, target_var):
+        return self.__load("{}/audits/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, target_var))
+
+    @staticmethod
+    def __save_overwrite(target_file, df):
+        if not path.exists(target_file):
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+
+        df.to_csv(target_file, index=False)
+
+    @staticmethod
+    def __load(target_file):
         if not os.path.exists(target_file):
             return None
 

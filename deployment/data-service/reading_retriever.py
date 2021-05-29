@@ -15,8 +15,8 @@ import libcommons.libcommons
 class ReadingRetriever():
     def __init__(self):
 
-        self.PAGE_LOAD_RETRIES = 4
-        self.WAIT_TIME = 2
+        self.PAGE_LOAD_RETRIES = 5
+        self.WAIT_TIME = 3
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")

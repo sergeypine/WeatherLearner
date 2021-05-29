@@ -9,3 +9,4 @@ bs4==0.0.1
 selenium==3.141.0
 json5==0.9.5
 lxml==4.6.1
+ilock==1.0.3

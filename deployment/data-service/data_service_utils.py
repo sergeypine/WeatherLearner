@@ -108,3 +108,41 @@ def get_actual_weather_history(conf: config.Config):
         actual_weather_history[var_name] = actual_weather_history[var_name].astype(int)
     actual_weather_history['DATE'] = readings['DATE']
     return actual_weather_history
+
+
+def get_prediction_audit_df(target_var):
+    data_store = libcommons.libcommons.DataStore()
+    actual_weather_history = data_store.actual_weather_history_load()
+    predictions = data_store.predictions_load()
+
+    if actual_weather_history is None or predictions is None:
+        return None
+
+    # Trim weather history and predictions to only include data for target var
+    predictions = predictions[predictions['VAR'] == target_var]
+    actual_weather_history = actual_weather_history[['DATE', target_var]]
+
+    # Merge history and predictions
+    merge_df = pd.DataFrame.merge(actual_weather_history, predictions, on=['DATE'])
+    merge_df = merge_df.rename(columns={target_var: 'Actual'})
+
+    # Create empty result DF with the right columns
+    audit_columns = ['DATE', 'Actual']
+    lookaheads = map(lambda pt: pt.lookahead,
+                     filter(lambda pt: pt.var == target_var, config.Config.ALL_PREDICTION_TARGETS))
+    lookahead_cols = map(lambda l: "+{}h".format(l), lookaheads)
+    audit_columns.extend(lookahead_cols)
+    audit_df = pd.DataFrame(columns=audit_columns)
+
+    # One row per DATE
+    audit_df['DATE'] = merge_df['DATE'].unique()
+
+    # Populate result DF row by row
+    for index, row in merge_df.iterrows():
+        ts = row['DATE']
+        audit_df.loc[audit_df['DATE'] == ts, 'Actual'] = row['Actual']
+
+        la = row['LOOK_AHEAD']
+        audit_df.loc[audit_df['DATE'] == ts, "+{}h".format(la)] = row['PREDICTION']
+
+    return audit_df

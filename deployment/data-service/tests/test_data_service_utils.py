@@ -1,6 +1,7 @@
 import datetime
 
 import pandas as pd
+import numpy as np
 import pytest
 import sys
 import os
@@ -236,6 +237,77 @@ def test_get_actual_weather_history():
         shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
+
+def test_get_prediction_audit_df():
+    try:
+        old_config = copy.deepcopy(config.Config)
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
+
+        pt_var1_6h = config.PredictionTarget('Var1', 6)
+        pt_var1_12h = config.PredictionTarget('Var1', 12)
+        pt_var2_6h = config.PredictionTarget('Var2', 6)
+        pt_var2_12h = config.PredictionTarget('Var2', 12)
+        config.Config.ALL_PREDICTION_TARGETS = [pt_var1_6h, pt_var1_12h, pt_var2_6h, pt_var2_12h]
+
+        ds = libcommons.libcommons.DataStore()
+
+        # The Situation:
+        #  - Date1 has Actual Data and All Predictions
+        #  - Date2 has Actual Data and Half Predictions
+        #  - Date3 has Actual Data but NO Predictions
+        #  - Date4 has NO Actual Data but ALL Predictions
+
+        date1 = '2020-01-01 00:00:00'
+        date2 = '2020-01-01 01:00:00'
+        date3 = '2020-01-01 02:00:00'
+        date4 = '2020-01-01 03:00:00'
+        actual_weather = pd.DataFrame.from_dict({
+            'DATE': [date1, date2, date3],
+            'Var1': [20, 21, 22],
+            'Var2': [0, 1, 2]
+        })
+        ds.actual_weather_history_save(actual_weather)
+        ds.predictions_append(date1, pt_var1_6h, 30)
+        ds.predictions_append(date1, pt_var1_12h, 32)
+        ds.predictions_append(date1, pt_var2_6h, 10)
+        ds.predictions_append(date1, pt_var2_12h, 12)
+        # --
+        ds.predictions_append(date2, pt_var1_6h, 25)
+        ds.predictions_append(date2, pt_var2_12h, 8)
+        # --
+        ds.predictions_append(date4, pt_var1_6h, 40)
+        ds.predictions_append(date4, pt_var1_12h, 41)
+        ds.predictions_append(date4, pt_var2_6h, 5)
+        ds.predictions_append(date4, pt_var2_12h, 6)
+        # --
+
+        var1_audit_df = data_service_utils.get_prediction_audit_df('Var1')
+        var2_audit_df = data_service_utils.get_prediction_audit_df('Var2')
+
+        assert len(var1_audit_df) == 2
+        assert var1_audit_df.iloc[0]['DATE'] == pd.Timestamp(date1)
+        assert var1_audit_df.iloc[0]['Actual'] == 20
+        assert var1_audit_df.iloc[0]['+6h'] == 30
+        assert var1_audit_df.iloc[0]['+12h'] == 32
+        assert var1_audit_df.iloc[1]['DATE'] == pd.Timestamp(date2)
+        assert var1_audit_df.iloc[1]['Actual'] == 21
+        assert var1_audit_df.iloc[1]['+6h'] == 25
+        assert np.isnan(var1_audit_df.iloc[1]['+12h'])
+
+        assert len(var2_audit_df) == 2
+        assert var2_audit_df.iloc[0]['DATE'] == pd.Timestamp(date1)
+        assert var2_audit_df.iloc[0]['Actual'] == 0
+        assert var2_audit_df.iloc[0]['+6h'] == 10
+        assert var2_audit_df.iloc[0]['+12h'] == 12
+        assert var2_audit_df.iloc[1]['DATE'] == pd.Timestamp(date2)
+        assert var2_audit_df.iloc[1]['Actual'] == 1
+        assert np.isnan(var2_audit_df.iloc[1]['+6h'])
+        assert var2_audit_df.iloc[1]['+12h'] == 8
+
+    finally:
+        config.Config = old_config
 
 #  -----------------------------------------------------------------
 #  --- Helper routines
