@@ -58,7 +58,7 @@ def get_missing_timestamp_prediction_targets(conf: config.Config):
     ds = libcommons.libcommons.DataStore()
 
     now_datetime = datetime.datetime.now(pytz.timezone(conf.TARGET_TIMEZONE)).replace(
-        tzinfo=None, second=0, microsecond=0)
+        tzinfo=None, second=0, minute=0, microsecond=0)
     dates_with_missing_readings = list(get_date_locations_to_retrieve(conf).keys())
     dates_with_missing_readings.sort()
 
