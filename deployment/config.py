@@ -35,7 +35,7 @@ class Config(object):
     # =========================================================
     DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 15
     DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 3
-    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 7
+    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 10
     DATA_SERVICE_BACKFILL_BATCH_SIZE = 3
     DATA_SERVICE_NUM_RETRIEVER_WORKERS = 4
     DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
@@ -48,6 +48,10 @@ class Config(object):
 
     WEBAPP_MAX_READING_DELAY_HOURS = 3
     WEBAPP_HRS_INCLUDED_AUDIT = [2, 8, 14, 20]
+
+    TRAINER_LOG_FILE = "training.log"
+    TRAINER_LOG_LEVEL = 'INFO'
+    TRAINER_LOG_FORMAT = '%(asctime)s %(levelname)-8s %(message)s'
     # =========================================================
     DATA_STORE_BASE_DIR = "../data_store"
     MODELS_BASE_DIR = "../pretrained"

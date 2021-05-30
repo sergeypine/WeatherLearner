@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(1, '../')
 
 import config
-import libcommons
+import libcommons.libcommons
 
 
 def test_datastore_readings():
@@ -24,7 +24,7 @@ def test_datastore_readings():
         nine = pd.Timestamp('2020-02-15 09:00:00')
         ten = pd.Timestamp('2020-02-15 10:00:00')
         eleven = pd.Timestamp('2020-02-15 11:00:00')
-        ds = libcommons.DataStore()
+        ds = libcommons.libcommons.DataStore()
 
         ds.readings_append('Rio', pd.DataFrame.from_dict({'DATE': [ten], 'data': ['data1']}))
         df = ds.readings_load('Rio')
@@ -65,7 +65,7 @@ def test_datastore_predictions():
         if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
             shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
 
-        ds = libcommons.DataStore()
+        ds = libcommons.libcommons.DataStore()
         ds.predictions_append('2015-05-01 10:00:00', config.PredictionTarget('var1', 6), 100)
         df = ds.predictions_load()
 
@@ -135,7 +135,7 @@ def test_trim_readings_and_predictions_to_backfill_days():
 
         current_time = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(
             tzinfo=None, minute=0, second=0, microsecond=0)
-        ds = libcommons.DataStore()
+        ds = libcommons.libcommons.DataStore()
 
         readings_dates = []
         readings_data = []
@@ -175,8 +175,8 @@ def test_trim_readings_and_predictions_to_backfill_days():
 def test_feature_set_builder_build_latest():
     """Verify the building of a Pandas DataFrame containing all features needed for a model to predict
         (provide no base_time for most recent prediction) """
-    ds = libcommons.DataStore()
-    fsb = libcommons.FeatureSetBuilder()
+    ds = libcommons.libcommons.DataStore()
+    fsb = libcommons.libcommons.FeatureSetBuilder()
 
     # --- Set up fake data and fake config
     dates = ['2020-02-15 09:00:00', '2020-02-15 10:00:00', '2020-02-15 11:00:00', '2020-02-15 12:00:00']
@@ -233,8 +233,8 @@ def test_feature_set_builder_build_latest():
 def test_feature_set_builder_build_base_time():
     """Verify the building of a Pandas DataFrame containing all features needed for a model to predict
         (provide  base_time for non- recent prediction) """
-    ds = libcommons.DataStore()
-    fsb = libcommons.FeatureSetBuilder()
+    ds = libcommons.libcommons.DataStore()
+    fsb = libcommons.libcommons.FeatureSetBuilder()
 
     # --- Set up fake data and fake config
     dates = ['2020-02-15 10:00:00', '2020-02-15 11:00:00', '2020-02-15 12:00:00', '2020-02-15 13:00:00']
@@ -280,8 +280,8 @@ def test_feature_set_builder_build_base_time():
 
 def test_feature_set_builder_build_missing_tail():
     """Verify the building of a Pandas DataFrame still works if adjacent locations miss most recent reading """
-    ds = libcommons.DataStore()
-    fsb = libcommons.FeatureSetBuilder()
+    ds = libcommons.libcommons.DataStore()
+    fsb = libcommons.libcommons.FeatureSetBuilder()
 
     # --- Set up fake data and fake config
     target_df = pd.DataFrame.from_dict({'DATE': ['2020-02-15 10:00:00', '2020-02-15 11:00:00', '2020-02-15 12:00:00'],

@@ -227,6 +227,7 @@ class DataStore(object):
 
         return trim_summary
 
+
 # =============================================================================
 # =============================================================================
 
@@ -235,16 +236,19 @@ class FeatureSetBuilder(object):
         self.conf = config.Config
         self.data_store = DataStore()
 
-    def build_feature_set(self, prediction_target, base_time=None):
+    def build_feature_set(self, prediction_target, base_time=None, readings_csv_directory=None, keep_all_dates=False):
         """
         Build a Pandas DF containing all features for a prediction target, one row/timestamp
 
+        :param keep_all_dates: Do not discard entries not needed for prediction_target
         :param prediction_target: what we are predicting (predicted variable, lookahead time)
         :param base_time: timestamp of the latest reading based on which we are predicting
             (if None, use latest available)
+        :param readings_csv_directory: where the location reading CSVs are located
+            (if None, use datastore)
         :return: Pandas DF containing all features for a prediction target, one row/timestamp, no extra rows
         """
-        target_df = self.data_store.readings_load(self.conf.TARGET_LOCATION)
+        target_df = self.load_readings(self.conf.TARGET_LOCATION, readings_csv_directory)
         target_df = self.drop_unused_columns(target_df, prediction_target)
 
         # Base Time not provided -> assume we are predicting for the latest reading
@@ -252,16 +256,20 @@ class FeatureSetBuilder(object):
             base_time = target_df.iloc[-1]['DATE']
 
         #  get rid of rows outside time range & pad if timestamps are missing
-        merged_df = self.adjust_df_to_relevant_time_range(prediction_target, target_df, base_time)
+        if not keep_all_dates:
+            merged_df = self.adjust_df_to_relevant_time_range(prediction_target, target_df, base_time)
+        else:
+            merged_df = target_df
 
         suffix_no = 1
 
         # Merge adjacent location files one by one relying on DATE
         for adjacent_location in self.conf.PREDICTION_TARGET_LOCATIONS[prediction_target]:
-            adjacent_df = self.data_store.readings_load(adjacent_location)
+            adjacent_df = self.load_readings(adjacent_location, readings_csv_directory)
 
             #  get rid of rows outside time range & pad if timestamps are missing
-            adjacent_df = self.adjust_df_to_relevant_time_range(prediction_target, adjacent_df, base_time)
+            if not keep_all_dates:
+                adjacent_df = self.adjust_df_to_relevant_time_range(prediction_target, adjacent_df, base_time)
 
             adjacent_df = self.drop_unused_columns(adjacent_df, prediction_target)
 
@@ -304,6 +312,13 @@ class FeatureSetBuilder(object):
     @staticmethod
     def get_columns_to_normalize(featureset, prediction_target):
         return featureset.columns.drop([prediction_target.var])
+
+    @staticmethod
+    def load_readings(location, dir_path):
+        if dir_path is not None:
+            return pd.read_csv("{}/{}_PREPROC.csv".format(dir_path, location), parse_dates=['DATE'])
+        else:
+            return DataStore().readings_load(location)
 
 
 # =============================================================================
