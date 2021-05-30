@@ -1,7 +1,9 @@
+import datetime
 import logging
 import tensorflow as tf
 import json
 import numpy as np
+import pandas as pd
 import math
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
@@ -14,6 +16,10 @@ import libcommons.libcommons
 import config
 
 MAX_EPOCHS = 2
+evaluations = {
+    'REGRESSION' : [],
+    'CLASSIFICATION': []
+}
 
 
 def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
@@ -24,13 +30,17 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
                                                        base_time=None,
                                                        readings_csv_directory=preprocessed_readings_dir,
                                                        keep_all_dates=True)
+    # Train/validation Split: 70% train, 30% validate
+    train_end_idx = int(len(featureset) * 0.70)
+    from_ts = featureset.iloc[0]['DATE']
+    to_ts = featureset.iloc[train_end_idx-1]['DATE']
+
     # DATE is no longer of use to us
     featureset = featureset.drop(columns=['DATE'])
 
-    # Split the data: 70% for training, 30% for validation
-    n = len(featureset)
-    train_df = featureset[0: int(n * 0.70)]
-    val_df = featureset[int(n * 0.70):]
+    # Do the splitting
+    train_df = featureset[0: train_end_idx]
+    val_df = featureset[train_end_idx:]
 
     # Normalize input data (NOTE: TF tutorial also scales the target variable)
     train_mean = train_df[feature_set_builder.get_columns_to_normalize(train_df, prediction_target)].mean()
@@ -79,6 +89,22 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
 
     # NOTE: provide the Validation Dataset so that the Model does not check itself on Train
     model.fit(wg.train, validation_data=wg.val, callbacks=[es_callback], epochs=MAX_EPOCHS)
+
+    # Evaluate model and capture results
+    eval_entry = {'PREDICTION_TARGET': prediction_target, 'TRAINED_TS': pd.Timestamp(datetime.datetime.now()),
+                  'TRAIN_DATE_FROM': from_ts, 'TRAIN_DATE_TO': to_ts, 'TRAINING_SAMPLES': len(train_df)}
+    if is_binary:
+        recall, precision = evaluate_classification_model(model,
+                                                          wg.val,
+                                                          if_all=conf.PREDICTED_VARIABLE_AGG_RULES[prediction_target.var] == 'ALL')
+        eval_entry['RECALL'] = recall
+        eval_entry['PRECISION'] = precision
+        evaluations['CLASSIFICATION'].append(eval_entry)
+    else:
+        rmse, mape = evaluate_classification_model(model, wg.val)
+        eval_entry['RMSE'] = rmse
+        eval_entry['MAPE'] = mape
+        evaluations['REGRESSION'].append(eval_entry)
 
     return model, {'STD': train_std.tolist(), 'MEAN': train_mean.tolist()}
 
@@ -168,9 +194,9 @@ def get_activation_loss_and_metrics(is_binary):
     return activation, loss, metrics
 
 
-def evaluate_classification_model(model, testSet, options=[]):
-    predicted_labels = (model.predict(testSet, verbose=1) > 0.5).astype("int32")
-    true_labels = np.concatenate([y for x, y in testSet], axis=0)
+def evaluate_classification_model(model, test_set, if_all=True):
+    predicted_labels = (model.predict(test_set, verbose=1) > 0.5).astype("int32")
+    true_labels = np.concatenate([y for x, y in test_set], axis=0)
 
     assert len(predicted_labels) == len(true_labels)
 
@@ -183,7 +209,7 @@ def evaluate_classification_model(model, testSet, options=[]):
         predicted_i = predicted_labels[i].flatten()
         true_i = true_labels[i].flatten()
 
-        if not "TrueIfAllTrue" in options:
+        if if_all:
             predicted_i_agg = 1 if sum(predicted_i) > 0 else 0
             true_i_agg = 1 if sum(true_i) > 0 else 0
         else:
@@ -198,9 +224,10 @@ def evaluate_classification_model(model, testSet, options=[]):
 
     return  recall, precision
 
-def evaluate_regression_model(model, testSet, options=[]):
-    predicted_values = model.predict(testSet)
-    true_values = np.concatenate([y for x, y in testSet], axis=0)
+
+def evaluate_regression_model(model, test_set):
+    predicted_values = model.predict(test_set)
+    true_values = np.concatenate([y for x, y in test_set], axis=0)
 
     assert len(predicted_values) == len(true_values)
 
@@ -254,7 +281,9 @@ def train_models(preprocessed_readings_dir):
                                         preprocessed_readings_dir)
         logging.info("END: train Model for  var = {}, lookahead = {}hr".format(
             prediction_target.var, prediction_target.lookahead))
+        print(evaluations)
 
+        # TODO - save evaluations as model_info
         # model.save(libcommons.libcommons.get_model_file(prediction_target))
         # with open(libcommons.libcommons.get_normalization_file(prediction_target), "w") as outfile:
         #    json.dump(norm_dict, outfile)
