@@ -1,6 +1,7 @@
 import sys
 import os
 import datetime
+import pytz
 import shutil
 
 import pandas as pd
@@ -123,6 +124,53 @@ def test_datastore_predictions():
         shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
         config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
+
+def test_trim_readings_and_predictions_to_backfill_days():
+    """Verify that predictions and readings beyond backfill horizon are removed"""
+    try:
+        old_ds_path = config.Config.DATA_STORE_BASE_DIR
+        config.Config.DATA_STORE_BASE_DIR = "tests/test_datastore"
+        if os.path.exists(config.Config.DATA_STORE_BASE_DIR):
+            shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
+
+        current_time = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(
+            tzinfo=None, minute=0, second=0, microsecond=0)
+        ds = libcommons.DataStore()
+
+        readings_dates = []
+        readings_data = []
+        for i in range(0, config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS+1):
+            ds.predictions_append(current_time, config.Config.ALL_PREDICTION_TARGETS[0], i)
+            readings_dates.append(current_time)
+            readings_data.append(i)
+            current_time = current_time - datetime.timedelta(days=1)
+
+        reading_df = pd.DataFrame.from_dict({
+            'DATE' : readings_dates,
+            'DATA': readings_data
+        })
+        ds.readings_append(config.Config.TARGET_LOCATION, reading_df)
+
+        assert len(ds.predictions_load()) == config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS+1
+        assert len(ds.readings_load(config.Config.TARGET_LOCATION)) == \
+               config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS+1
+
+        summary = ds.trim_readings_and_predictions_to_backfill_days()
+        print(summary)
+
+        predictions = ds.predictions_load()
+        assert len(predictions) == config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS
+        assert predictions.iloc[0]['PREDICTION'] == config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS - 1
+        assert predictions.iloc[config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS - 1]['PREDICTION'] == 0
+
+        readings = ds.readings_load(config.Config.TARGET_LOCATION)
+        assert len(readings) == config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS
+        assert readings.iloc[0]['DATA'] == config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS - 1
+        assert readings.iloc[config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS - 1]['DATA'] == 0
+
+    finally:
+        shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
+        config.Config.DATA_STORE_BASE_DIR = old_ds_path
 
 def test_feature_set_builder_build_latest():
     """Verify the building of a Pandas DataFrame containing all features needed for a model to predict

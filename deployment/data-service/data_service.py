@@ -22,11 +22,9 @@ def generate_forecast_job():
 
     # (1) Get Weather Readings for all locations and for the last 2 days
     for forecast_date in forecast_dates:
-        retriever_executor = concurrent.futures.ThreadPoolExecutor(max_workers=conf.DATA_SERVICE_NUM_RETRIEVER_WORKERS)
         for location in conf.LOCATION_CODES:
             logging.info("Retrieving data for location {}, date {}".format(location, forecast_date))
-            retriever_executor.submit(retriever_dict[location].retrieve_for_date_and_location, forecast_date, location)
-        retriever_executor.shutdown(wait=True)
+            retriever.retrieve_for_date_and_location(forecast_date, location)
 
     # (2) Generate Forecast
     for prediction_target in conf.ALL_PREDICTION_TARGETS:
@@ -54,12 +52,9 @@ def backfill_readings_job():
     if len(missing_dates) > 0:
         logging.info("Missing weather readings for the following dates will be backfilled: {}".format(missing_dates))
         for missing_date in missing_dates:
-            retriever_executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=conf.DATA_SERVICE_NUM_RETRIEVER_WORKERS)
             for location in missing_dates_locations[missing_date]:
                 logging.info("Backfilling missing readings, location {}, date {}".format(location, missing_date))
-                retriever_executor.submit(retriever_dict[location].retrieve_for_date_and_location, missing_date, location)
-            retriever_executor.shutdown(wait=True)
+                retriever.retrieve_for_date_and_location(missing_date, location)
     else:
         logging.info("No Weather Readings are missing")
 
@@ -79,13 +74,10 @@ def backfill_predictions_job():
         logging.info("Recent predictions for the following TS will be backfilled: {}".format(missing_timestamps))
         for missing_ts in missing_timestamps:
             prediction_targets = missing_timestamp_prediction_targets[missing_ts]
-            #predictor_executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(conf.ALL_PREDICTION_TARGETS))
             for prediction_target in prediction_targets:
                 logging.info("Backfilling recent prediction for Target {}, base Timestamp {}".format(
                     prediction_target, missing_ts))
-                #predictor_executor.submit(predictor.predict_for_target_and_base_time, prediction_target, missing_ts)
                 predictor.predict_for_target_and_base_time(prediction_target, missing_ts)
-            #predictor_executor.shutdown(wait=True)
     else:
         logging.info("No recent predictions are missing")
 
@@ -111,12 +103,20 @@ def update_prediction_audit_job():
     logging.info("!!! END Update Prediction Audit Job")
 
 
+def trim_old_data_job():
+    logging.info("!!! START Trim Old Data Job")
+    trim_summary = libcommons.libcommons.DataStore().trim_readings_and_predictions_to_backfill_days()
+    logging.info("Trim Summary : {}".format(trim_summary))
+    logging.info("!!! END Trim Old Data Job")
+
+
 def main():
     # Pre-execute the jobs
     generate_forecast_job()
     backfill_readings_job()
     backfill_predictions_job()
     update_prediction_audit_job()
+    trim_old_data_job()
 
     # Keep running the jobs on a schedule
     schedule.every(conf.DATA_SERVICE_FORECAST_INTERVAL_MINUTES).minutes.do(generate_forecast_job)
@@ -124,6 +124,7 @@ def main():
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_readings_job)
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_predictions_job)
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_prediction_audit_job)
+    schedule.every(60).minutes.do(trim_old_data_job)
     while 1:
         schedule.run_pending()
         time.sleep(1)
@@ -136,7 +137,5 @@ if __name__ == "__main__":
                         level=conf.DATA_SERVICE_LOG_LEVEL)
 
     predictor = predictor.Predictor()
-    retriever_dict = {}
-    for location in conf.LOCATION_CODES:
-        retriever_dict[location] = reading_retriever.ReadingRetriever()
+    retriever = reading_retriever.ReadingRetriever()
     main()

@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import sys
 import tensorflow as tf
 import numpy as np
@@ -108,6 +109,8 @@ class DataStore(object):
         target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
         if not path.exists(target_file):
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
+            data_frame['DATE'] = pd.to_datetime(data_frame['DATE'])
+            data_frame = data_frame.sort_values(by=['DATE'])
             data_frame.to_csv(target_file, index=False)
         else:
             existing_df = pd.read_csv(target_file, parse_dates=['DATE'])
@@ -122,8 +125,9 @@ class DataStore(object):
             # Now add in the new frame
             existing_df = pd.concat([existing_df, data_frame], ignore_index=True)
 
+            existing_df['DATE'] = pd.to_datetime(existing_df['DATE'])
             existing_df = existing_df.drop_duplicates(subset=['DATE'])
-            existing_df = existing_df.sort_values(by='DATE')
+            existing_df = existing_df.sort_values(by=['DATE'])
 
             existing_df.to_csv(target_file, index=False)
 
@@ -189,6 +193,39 @@ class DataStore(object):
 
         return pd.read_csv(target_file, parse_dates=['DATE'])
 
+    def trim_readings_and_predictions_to_backfill_days(self):
+        now_time = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(tzinfo=None)
+        history_limit_time = now_time - datetime.timedelta(days=config.Config.DATA_SERVICE_BACKFILL_INTERVAL_DAYS)
+
+        # readings
+        trim_summary = []
+        for location in config.Config.LOCATION_CODES:
+            target_file = "{}/readings/{}.csv".format(self.conf.DATA_STORE_BASE_DIR, location)
+            if not os.path.exists(target_file):
+                continue
+
+            df = DataStore.__load(target_file)
+            old_len = len(df)
+            df = df[df['DATE'] >= history_limit_time]
+            new_len = len(df)
+            df.to_csv(target_file, index=False)
+            if new_len < old_len:
+                trim_summary.append("File for location {} trimmed from {} to {} entries".format(
+                    location, old_len, new_len))
+
+        # Predictions
+        target_file = "{}/predictions.csv".format(self.conf.DATA_STORE_BASE_DIR)
+        if os.path.exists(target_file):
+            with ILock("weather-predictor-predictions-lock"):  # due to frequent access race conditions are common
+                df = DataStore.__load(target_file)
+                old_len = len(df)
+                df = df[df['DATE'] >= history_limit_time]
+                new_len = len(df)
+                df.to_csv(target_file, index=False)
+                if new_len < old_len:
+                    trim_summary.append("Predictions file trimmed from {} to {} entries".format(old_len, new_len))
+
+        return trim_summary
 
 # =============================================================================
 # =============================================================================

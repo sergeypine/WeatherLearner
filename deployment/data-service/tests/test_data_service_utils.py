@@ -158,21 +158,32 @@ def test_get_missing_timestamp_prediction_targets():
         missing_timestamp_prediction_targets = data_service_utils.get_missing_timestamp_prediction_targets(conf)
         missing_timestamps = list(missing_timestamp_prediction_targets.keys())
         assert len(missing_timestamps) == 5
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)][0] == pt_temp_6h
+        assert len(
+            missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 0, 0)][
+                   0] == pt_temp_6h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)][0] == pt_temp_12h
+        assert len(
+            missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 23, 0)][
+                   0] == pt_temp_12h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)]) == 2
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][0] == pt_windspeed_6h
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][1] == pt_windspeed_12h
+        assert len(
+            missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)]) == 2
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][
+                   0] == pt_windspeed_6h
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 1, 0)][
+                   1] == pt_windspeed_12h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)][0] == pt_windspeed_6h
+        assert len(
+            missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 2, 0)][
+                   0] == pt_windspeed_6h
 
-        assert len(missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)]) == 1
-        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)][0] == pt_windspeed_12h
+        assert len(
+            missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)]) == 1
+        assert missing_timestamp_prediction_targets[datetime.datetime(date1.year, date1.month, date1.day, 3, 0)][
+                   0] == pt_windspeed_12h
 
     finally:
         shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
@@ -200,21 +211,24 @@ def test_get_actual_weather_history():
             'Temp': 'AVG',
             'WindSpeed': 'AVG',
         }
+        future_date = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(tzinfo=None) + \
+                      datetime.timedelta(hours=2)
 
         date_rows = ['2018-05-05 10:00:00', '2018-05-05 11:00:00', '2018-05-05 12:00:00', '2018-05-05 13:00:00',
                      '2018-05-05 14:00:00', '2018-05-05 15:00:00', '2018-05-05 16:00:00', '2018-05-05 17:00:00',
-                     '2018-05-05 18:00:00']
-        temp_rows =     [50, 51, 52, 53, 54, 55, 55, 54, 53]
+                     '2018-05-05 18:00:00', future_date]
+
+        temp_rows = [50, 51, 52, 53, 54, 55, 55, 54, 53, 100]
         expected_temp = [50, 51, 52, 53, 54, 54, 54, 54, 53]
 
-        wind_rows =     [10, 11, 12, 13, 12, 11, 10, 9, 8]
+        wind_rows = [10, 11, 12, 13, 12, 11, 10, 9, 8, 100]
         expected_wind = [11, 11, 11, 11, 11, 11, 10, 9, 9]
 
-        is_clear_rows =     [0, 1, 1, 1, 1, 1, 1, 1, 0]
+        is_clear_rows = [0, 1, 1, 1, 1, 1, 1, 1, 0, 10]
         expected_is_clear = [0, 0, 0, 0, 1, 0, 0, 0, 0]
 
-        is_precip_rows =    [1, 0, 0, 0, 0, 0, 0, 0, 1]
-        expected_is_precip =[1, 1, 1, 1, 0, 1, 1, 1, 1]
+        is_precip_rows = [1, 0, 0, 0, 0, 0, 0, 0, 1, 20]
+        expected_is_precip = [1, 1, 1, 1, 0, 1, 1, 1, 1]
 
         readings = pd.DataFrame.from_dict({
             'DATE': date_rows,
@@ -308,6 +322,7 @@ def test_get_prediction_audit_df():
 
     finally:
         config.Config = old_config
+
 
 #  -----------------------------------------------------------------
 #  --- Helper routines

@@ -137,36 +137,43 @@ def test_format_forecast():
     date2 = '2020-03-01 10:00:00'
     date3 = '2020-03-01 16:00:00'
     date4 = '2020-03-01 22:00:00'
+    date5 = '2020-03-04 04:00:00'
     predictions_df = pd.DataFrame.from_dict(
         {'DATE': [date1, date1, date1, date1,
                   date2, date2, date2, date2,
                   date3, date3, date3, date3,
-                  date4, date4, date4, date4],
+                  date4, date4, date4, date4,
+                  date5],
          'VAR': ['Temp', 'WindSpeed', '_is_clear', '_is_precip',
                  'Temp', 'WindSpeed', '_is_clear', '_is_precip',
                  'Temp', 'WindSpeed', '_is_clear', '_is_precip',
-                 'Temp', 'WindSpeed', '_is_clear', '_is_precip'],
+                 'Temp', 'WindSpeed', '_is_clear', '_is_precip',
+                 'Temp'],
          'PREDICTION': [25.2, 10.3, 0, 1,  # Precipitation (snow)
                         40.1, 5.2, 0, 1,  # Precipitation (rain)
                         45.4, 2.0, 0, 0,  # Cloudy
-                        35.3, 8.4, 1, 0]  # Clear
+                        35.3, 8.4, 1, 0,  # Clear
+                        50]               # For date5  only Temperature is present
          }
     )
 
     formatted_df = webapp_utils.format_forecast(predictions_df)
     print(formatted_df)
-    assert len(formatted_df) == 4
+    assert len(formatted_df) == 5
     assert formatted_df.iloc[0]['Temperature'] == '25 F'
     assert formatted_df.iloc[1]['Temperature'] == '40 F'
     assert formatted_df.iloc[2]['Temperature'] == '45 F'
     assert formatted_df.iloc[3]['Temperature'] == '35 F'
+    assert formatted_df.iloc[4]['Temperature'] == '50 F'
 
     assert formatted_df.iloc[0]['Wind'] == '10 mph'
     assert formatted_df.iloc[1]['Wind'] == '5 mph'
     assert formatted_df.iloc[2]['Wind'] == '2 mph'
     assert formatted_df.iloc[3]['Wind'] == '8 mph'
+    assert np.isnan(formatted_df.iloc[4]['Wind'])
 
     assert formatted_df.iloc[0]['Conditions'] == 'Snow'
     assert formatted_df.iloc[1]['Conditions'] == 'Rain'
     assert formatted_df.iloc[2]['Conditions'] == 'Cloudy'
     assert formatted_df.iloc[3]['Conditions'] == 'Clear'
+    assert np.isnan(formatted_df.iloc[4]['Conditions'])

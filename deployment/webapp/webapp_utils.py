@@ -87,20 +87,21 @@ def format_forecast(predictions_df: pd.DataFrame):
     formatted_df['Timestamp'] = dates
 
     for _date in dates:
-        # NOTE - race condition here during the first run of backfill (since forecasts are missing for some vars)
-        temp = (predictions_df[(predictions_df['DATE'] == _date) &
-                               (predictions_df['VAR'] == 'Temp')])['PREDICTION'].values[0]
-        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Temperature'] = "{} F".format(int(temp))
+        date_predictions_df = predictions_df[predictions_df['DATE'] == _date]
 
-        wind = (predictions_df[(predictions_df['DATE'] == _date) &
-                               (predictions_df['VAR'] == 'WindSpeed')])['PREDICTION'].values[0]
-        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Wind'] = "{} mph".format(int(wind))
+        temp = (date_predictions_df[date_predictions_df['VAR'] == 'Temp'])['PREDICTION'].values
+        if len(temp) > 0:
+            formatted_df.loc[formatted_df['Timestamp'] == _date, 'Temperature'] = "{} F".format(int(temp[0]))
 
-        _is_clear = (predictions_df[(predictions_df['DATE'] == _date) &
-                               (predictions_df['VAR'] == '_is_clear')])['PREDICTION'].values[0]
-        _is_precip = (predictions_df[(predictions_df['DATE'] == _date) &
-                               (predictions_df['VAR'] == '_is_precip')])['PREDICTION'].values[0]
-        formatted_df.loc[formatted_df['Timestamp'] == _date, 'Conditions'] = get_conditions(temp, _is_clear, _is_precip)
+        wind = (date_predictions_df[(date_predictions_df['VAR'] == 'WindSpeed')])['PREDICTION'].values
+        if len(wind) > 0:
+            formatted_df.loc[formatted_df['Timestamp'] == _date, 'Wind'] = "{} mph".format(int(wind[0]))
+
+        _is_clear = (date_predictions_df[(date_predictions_df['VAR'] == '_is_clear')])['PREDICTION'].values
+        _is_precip = (date_predictions_df[(date_predictions_df['VAR'] == '_is_precip')])['PREDICTION'].values
+        if len(_is_clear) > 0 and len(_is_precip) > 0:
+            formatted_df.loc[formatted_df['Timestamp'] == _date, 'Conditions'] = \
+                get_conditions(temp, _is_clear[0], _is_precip[0])
 
     return formatted_df
 

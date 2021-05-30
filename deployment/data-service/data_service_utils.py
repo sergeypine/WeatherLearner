@@ -93,6 +93,11 @@ def get_missing_timestamp_prediction_targets(conf: config.Config):
 
 def get_actual_weather_history(conf: config.Config):
     readings = libcommons.libcommons.DataStore().readings_load(conf.TARGET_LOCATION)
+
+    # Due to padding of readings to 24h we need to explicitly exclude "future" entries
+    now_time = datetime.datetime.now(pytz.timezone(config.Config.TARGET_TIMEZONE)).replace(tzinfo=None)
+    readings = readings[readings['DATE'] < now_time]
+
     actual_weather_history = pd.DataFrame()
 
     for var_name in conf.PREDICTED_VARIABLE_AHI:
