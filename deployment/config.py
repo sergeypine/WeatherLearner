@@ -72,11 +72,11 @@ class Config(object):
     TARGET_TIMEZONE = 'America/Chicago'
     MAX_LOOK_BACK_HOURS = 24
     # =========================================================
-    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_CLEAR_24H, PREDICTION_TARGET_IS_CLEAR_18H,
-                              PREDICTION_TARGET_IS_CLEAR_12H, PREDICTION_TARGET_IS_CLEAR_6H,
+    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_CLEAR_6H, PREDICTION_TARGET_IS_CLEAR_12H,
+                              PREDICTION_TARGET_IS_CLEAR_18H, PREDICTION_TARGET_IS_CLEAR_24H,
 
-                              PREDICTION_TARGET_IS_PRECIP_24H, PREDICTION_TARGET_IS_PRECIP_18H,
-                              PREDICTION_TARGET_IS_PRECIP_12H, PREDICTION_TARGET_IS_PRECIP_6H,
+                              PREDICTION_TARGET_IS_PRECIP_6H, PREDICTION_TARGET_IS_PRECIP_12H,
+                              PREDICTION_TARGET_IS_PRECIP_18H, PREDICTION_TARGET_IS_PRECIP_24H,
 
                               PREDICTION_TARGET_TEMP_6H, PREDICTION_TARGET_TEMP_12H,
                               PREDICTION_TARGET_TEMP_18H, PREDICTION_TARGET_TEMP_24H,
@@ -171,7 +171,6 @@ class Config(object):
         'WindSpeed': 'AVG',
     }
     # =========================================================
-    LOCATION_DATASET_FILE_FORMAT = '../processed-data/noaa_2011-2020_{}_PREPROC.csv'
 
     PREDICTION_TARGET_MODEL_TYPES = {
         PREDICTION_TARGET_IS_CLEAR_6H: 'LINEAR',
