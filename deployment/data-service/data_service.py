@@ -124,7 +124,7 @@ def main():
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_readings_job)
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_predictions_job)
     schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_prediction_audit_job)
-    schedule.every(60).minutes.do(trim_old_data_job)
+    schedule.every(60 * 24).minutes.do(trim_old_data_job)
     while 1:
         schedule.run_pending()
         time.sleep(1)

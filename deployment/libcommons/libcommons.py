@@ -250,6 +250,7 @@ class FeatureSetBuilder(object):
         """
         target_df = self.load_readings(self.conf.TARGET_LOCATION, readings_csv_directory)
         target_df = self.drop_unused_columns(target_df, prediction_target)
+        target_df = target_df.sort_values(by=['DATE'])
 
         # Base Time not provided -> assume we are predicting for the latest reading
         if base_time is None:
@@ -266,6 +267,7 @@ class FeatureSetBuilder(object):
         # Merge adjacent location files one by one relying on DATE
         for adjacent_location in self.conf.PREDICTION_TARGET_LOCATIONS[prediction_target]:
             adjacent_df = self.load_readings(adjacent_location, readings_csv_directory)
+            adjacent_df = adjacent_df.sort_values(by=['DATE'])
 
             #  get rid of rows outside time range & pad if timestamps are missing
             if not keep_all_dates:

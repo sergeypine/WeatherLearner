@@ -15,7 +15,7 @@ sys.path.insert(1, '../')
 import libcommons.libcommons
 import config
 
-MAX_EPOCHS = 5
+MAX_EPOCHS = 100
 evaluations = {
     'REGRESSION': [],
     'CLASSIFICATION': []
@@ -213,11 +213,11 @@ def evaluate_classification_model(model, test_set, if_all=True):
         true_i = true_labels[i].flatten()
 
         if if_all:
-            predicted_i_agg = 1 if sum(predicted_i) > 0 else 0
-            true_i_agg = 1 if sum(true_i) > 0 else 0
-        else:
             predicted_i_agg = 1 if sum(predicted_i) == len(predicted_i) else 0
             true_i_agg = 1 if sum(true_i) == len(true_i) else 0
+        else:
+            predicted_i_agg = 1 if sum(predicted_i) > 0 else 0
+            true_i_agg = 1 if sum(true_i) > 0 else 0
 
         predicted_agg.append(predicted_i_agg)
         true_agg.append(true_i_agg)

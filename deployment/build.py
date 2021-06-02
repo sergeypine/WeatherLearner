@@ -1,10 +1,12 @@
 import sys
 import os
 import subprocess
+import shutil
 
 # ========== Get command line arguments
 do_train = True
-do_test = False
+do_preprocess = True
+do_test = True
 do_build = True
 do_deploy_locally = True
 do_deploy_remotely = False
@@ -12,16 +14,19 @@ do_deploy_remotely = False
 cur_dir = os.getcwd()
 
 if do_train:
+    RAW_DATA_DIR = '../../raw-data'
     PROCESSED_DATA_DIR = '../../processed-data'
+    os.chdir('train-pipeline')
     # ========== Pre-process NOAA files
-    # TODO
+    if do_preprocess:
+        subprocess.run(['python3', 'preprocessor.py', RAW_DATA_DIR, PROCESSED_DATA_DIR], check=True).check_returncode()
 
     # ========== (Optional) Select Features
     # TODO
 
     #  ========== Train Models
-    os.chdir('train-pipeline')
     subprocess.run(['python3', 'trainer.py', PROCESSED_DATA_DIR], check=True).check_returncode()
+
     os.chdir(cur_dir)
 
 #  ==========  Run Tests

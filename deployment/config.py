@@ -34,9 +34,9 @@ PREDICTION_TARGET_WINDSPEED_24H = PredictionTarget('WindSpeed', 24)
 class Config(object):
     # =========================================================
     DATA_SERVICE_FORECAST_INTERVAL_MINUTES = 15
-    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 3
-    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 10
-    DATA_SERVICE_BACKFILL_BATCH_SIZE = 3
+    DATA_SERVICE_BACKFILL_INTERVAL_MINUTES = 2
+    DATA_SERVICE_BACKFILL_INTERVAL_DAYS = 30
+    DATA_SERVICE_BACKFILL_BATCH_SIZE = 2
     DATA_SERVICE_NUM_RETRIEVER_WORKERS = 4
     DATA_SERVICE_LOG_FILE = '../logs/data_service.log'
     DATA_SERVICE_LOG_LEVEL = 'INFO'
@@ -66,9 +66,7 @@ class Config(object):
         'Rochester': 'KRST',
         'Green_Bay': 'KGRB',
         'Lansing': 'KLAN',
-        'Indianapolis': 'KIND',
-        'Columbus': 'KCMH',
-        'Toledo': 'KTOL'
+        'Indianapolis': 'KIND'
     }
     TARGET_LOCATION = 'Chicago'
     TARGET_TIMEZONE = 'America/Chicago'
@@ -86,69 +84,54 @@ class Config(object):
                               PREDICTION_TARGET_WINDSPEED_6H, PREDICTION_TARGET_WINDSPEED_12H,
                               PREDICTION_TARGET_WINDSPEED_18H, PREDICTION_TARGET_WINDSPEED_24H]
 
+    IS_CLEAR_FEATS = ['_day_cos', '_day_sin', 'Temp', 'Pressure', 'Humidity', 'WindSpeed', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_precip']
+    IS_PRECIP_FEATS = ['_day_cos', '_day_sin', '_hour_cos', '_hour_sin', 'Temp', 'Pressure', 'DewPoint', 'WindSpeed', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_clear']
+    TEMP_FEATS = ['_day_cos', '_day_sin', '_hour_sin', '_hour_cos', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed', '_wind_dir_sin', '_wind_dir_cos', '_is_thunder']
+    WINDSPEED_FEATS = ['_day_cos', '_day_sin', '_hour_sin', '_hour_cos', 'Temp', 'DewPoint', 'Humidity', 'Pressure', 'Precipitation', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_is_thunder']
+
     PREDICTION_TARGET_FEATURES = {
-        PREDICTION_TARGET_IS_CLEAR_6H: ['_day_cos', 'DewPoint', '_cloud_intensity', 'CloudAltitude', '_is_thunder'],
-        PREDICTION_TARGET_IS_CLEAR_12H: ['_day_cos', 'Temp', 'PressureChange', '_cloud_intensity', 'CloudAltitude',
-                                         '_wind_dir_sin', '_is_precip'],
-        PREDICTION_TARGET_IS_CLEAR_18H: ['_day_cos', '_hour_cos', 'Temp', 'Pressure', 'PressureChange', 'WindSpeed',
-                                         '_wind_dir_sin'],
-        PREDICTION_TARGET_IS_CLEAR_24H: ['_day_cos', 'Temp', 'Pressure', 'PressureChange'],
+        PREDICTION_TARGET_IS_CLEAR_6H: IS_CLEAR_FEATS,
+        PREDICTION_TARGET_IS_CLEAR_12H: IS_CLEAR_FEATS,
+        PREDICTION_TARGET_IS_CLEAR_18H: IS_CLEAR_FEATS,
+        PREDICTION_TARGET_IS_CLEAR_24H: IS_CLEAR_FEATS,
 
-        PREDICTION_TARGET_IS_PRECIP_6H: ['_hour_sin', 'DewPoint'],
-        PREDICTION_TARGET_IS_PRECIP_12H: ['Precipitation', 'Pressure', 'CloudAltitude', 'WindSpeed', 'WindGust',
-                                          '_is_clear', '_is_thunder'],
-        PREDICTION_TARGET_IS_PRECIP_18H: ['_day_cos', 'Temp', 'Pressure', 'PressureChange', '_cloud_intensity',
-                                          'WindGust', '_wind_dir_sin', '_wind_dir_cos', 'Visibility', '_is_clear',
-                                          '_is_thunder'],
-        PREDICTION_TARGET_IS_PRECIP_24H: ['_day_cos', 'Temp', 'Humidity', 'Pressure', 'PressureChange',
-                                          '_cloud_intensity', 'WindGust', '_wind_dir_sin', '_wind_dir_cos',
-                                          'Visibility', '_is_snow', '_is_thunder'],
+        PREDICTION_TARGET_IS_PRECIP_6H: IS_PRECIP_FEATS,
+        PREDICTION_TARGET_IS_PRECIP_12H: IS_PRECIP_FEATS,
+        PREDICTION_TARGET_IS_PRECIP_18H: IS_PRECIP_FEATS,
+        PREDICTION_TARGET_IS_PRECIP_24H: IS_PRECIP_FEATS,
 
-        PREDICTION_TARGET_TEMP_6H: ['_hour_sin', 'DewPoint', 'Humidity', 'PressureChange', '_cloud_intensity',
-                                    '_is_thunder'],
-        PREDICTION_TARGET_TEMP_12H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust'],
-        PREDICTION_TARGET_TEMP_18H: ['_hour_sin', 'Precipitation', 'PressureChange', '_cloud_intensity', 'WindGust',
-                                     '_wind_dir_sin', '_is_thunder'],
-        PREDICTION_TARGET_TEMP_24H: ['_hour_sin', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity',
-                                     'WindSpeed',
-                                     '_wind_dir_cos'],
+        PREDICTION_TARGET_TEMP_6H: TEMP_FEATS,
+        PREDICTION_TARGET_TEMP_12H: TEMP_FEATS,
+        PREDICTION_TARGET_TEMP_18H: TEMP_FEATS,
+        PREDICTION_TARGET_TEMP_24H: TEMP_FEATS,
 
-        PREDICTION_TARGET_WINDSPEED_6H: ['_hour_sin', '_hour_cos', 'Humidity', 'Pressure', 'PressureChange'],
-        PREDICTION_TARGET_WINDSPEED_12H: ['_day_cos', '_hour_sin', '_hour_cos', 'DewPoint', 'Humidity', 'Pressure',
-                                          'PressureChange', 'CloudAltitude', 'WindGust', '_wind_dir_sin',
-                                          '_wind_dir_cos'],
-        PREDICTION_TARGET_WINDSPEED_18H: ['_day_cos', '_hour_sin', 'Temp', 'PressureChange', '_cloud_intensity',
-                                          'CloudAltitude'],
-        PREDICTION_TARGET_WINDSPEED_24H: ['_day_cos', '_hour_sin', 'Humidity', 'Precipitation', 'PressureChange',
-                                          'WindGust', '_wind_dir_cos', '_is_thunder'],
+        PREDICTION_TARGET_WINDSPEED_6H: WINDSPEED_FEATS,
+        PREDICTION_TARGET_WINDSPEED_12H: WINDSPEED_FEATS,
+        PREDICTION_TARGET_WINDSPEED_18H: WINDSPEED_FEATS,
+        PREDICTION_TARGET_WINDSPEED_24H: WINDSPEED_FEATS,
     }
 
+    LOCATIONS = ['Cedar_Rapids', 'Des_Moines', 'Madison', 'Rochester', 'Quincy', 'St_Louis', 'Green_Bay', 'Indianapolis', 'Lansing']
     PREDICTION_TARGET_LOCATIONS = {
-        PREDICTION_TARGET_IS_CLEAR_6H: ['Cedar_Rapids', 'Rochester', 'Madison', 'St_Louis', 'Green_Bay'],
-        PREDICTION_TARGET_IS_CLEAR_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison',
-                                         'St_Louis', 'Green_Bay'],
-        PREDICTION_TARGET_IS_CLEAR_18H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Columbus'],
-        PREDICTION_TARGET_IS_CLEAR_24H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Madison', 'St_Louis', 'Green_Bay',
-                                         'Lansing', 'Indianapolis'],
+        PREDICTION_TARGET_IS_CLEAR_6H: LOCATIONS,
+        PREDICTION_TARGET_IS_CLEAR_12H: LOCATIONS,
+        PREDICTION_TARGET_IS_CLEAR_18H: LOCATIONS,
+        PREDICTION_TARGET_IS_CLEAR_24H: LOCATIONS,
 
-        PREDICTION_TARGET_IS_PRECIP_6H: ['Cedar_Rapids', 'Des_Moines', 'Quincy', 'Madison', 'Green_Bay',
-                                         'Indianapolis'],
-        PREDICTION_TARGET_IS_PRECIP_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison', 'St_Louis'],
-        PREDICTION_TARGET_IS_PRECIP_18H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'St_Louis', 'Green_Bay'],
-        PREDICTION_TARGET_IS_PRECIP_24H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Madison', 'Green_Bay', 'Lansing',
-                                          'Indianapolis'],
+        PREDICTION_TARGET_IS_PRECIP_6H: LOCATIONS,
+        PREDICTION_TARGET_IS_PRECIP_12H: LOCATIONS,
+        PREDICTION_TARGET_IS_PRECIP_18H: LOCATIONS,
+        PREDICTION_TARGET_IS_PRECIP_24H: LOCATIONS,
 
-        PREDICTION_TARGET_TEMP_6H: ['Cedar_Rapids', 'Des_Moines', 'Rochester'],
-        PREDICTION_TARGET_TEMP_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Madison', 'Lansing',
-                                     'Indianapolis'],
-        PREDICTION_TARGET_TEMP_18H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy'],
-        PREDICTION_TARGET_TEMP_24H: ['Cedar_Rapids', 'Des_Moines', 'St_Louis', 'Indianapolis'],
+        PREDICTION_TARGET_TEMP_6H: LOCATIONS,
+        PREDICTION_TARGET_TEMP_12H: LOCATIONS,
+        PREDICTION_TARGET_TEMP_18H: LOCATIONS,
+        PREDICTION_TARGET_TEMP_24H: LOCATIONS,
 
-        PREDICTION_TARGET_WINDSPEED_6H: ['Cedar_Rapids', 'Des_Moines', 'Quincy', 'Madison', 'St_Louis', 'Lansing',
-                                         'Indianapolis'],
-        PREDICTION_TARGET_WINDSPEED_12H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy', 'Indianapolis'],
-        PREDICTION_TARGET_WINDSPEED_18H: ['Cedar_Rapids', 'Des_Moines', 'Madison', 'St_Louis'],
-        PREDICTION_TARGET_WINDSPEED_24H: ['Cedar_Rapids', 'Des_Moines', 'Rochester', 'Quincy']
+        PREDICTION_TARGET_WINDSPEED_6H: LOCATIONS,
+        PREDICTION_TARGET_WINDSPEED_12H: LOCATIONS,
+        PREDICTION_TARGET_WINDSPEED_18H: LOCATIONS,
+        PREDICTION_TARGET_WINDSPEED_24H: LOCATIONS
     }
 
     PREDICTION_TARGET_LOOKBACKS = {
@@ -192,22 +175,22 @@ class Config(object):
 
     PREDICTION_TARGET_MODEL_TYPES = {
         PREDICTION_TARGET_IS_CLEAR_6H: 'LINEAR',
-        PREDICTION_TARGET_IS_CLEAR_12H: 'LINEAR',
+        PREDICTION_TARGET_IS_CLEAR_12H: 'NN',
         PREDICTION_TARGET_IS_CLEAR_18H: 'NN',
         PREDICTION_TARGET_IS_CLEAR_24H: 'NN',
 
-        PREDICTION_TARGET_IS_PRECIP_6H: 'LINEAR',
+        PREDICTION_TARGET_IS_PRECIP_6H: 'DNN',
         PREDICTION_TARGET_IS_PRECIP_12H: 'CNN',
         PREDICTION_TARGET_IS_PRECIP_18H: 'CNN',
         PREDICTION_TARGET_IS_PRECIP_24H: 'CNN',
 
         PREDICTION_TARGET_TEMP_6H: 'DNN',
-        PREDICTION_TARGET_TEMP_12H: 'NN',
+        PREDICTION_TARGET_TEMP_12H: 'DNN',
         PREDICTION_TARGET_TEMP_18H: 'DNN',
-        PREDICTION_TARGET_TEMP_24H: 'LINEAR',
+        PREDICTION_TARGET_TEMP_24H: 'DNN',
 
         PREDICTION_TARGET_WINDSPEED_6H: 'NN',
         PREDICTION_TARGET_WINDSPEED_12H: 'NN',
         PREDICTION_TARGET_WINDSPEED_18H: 'NN',
-        PREDICTION_TARGET_WINDSPEED_24H: 'LINEAR'
+        PREDICTION_TARGET_WINDSPEED_24H: 'DNN'
     }
