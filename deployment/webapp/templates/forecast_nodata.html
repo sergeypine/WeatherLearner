@@ -9,13 +9,21 @@
         <h3 style="padding-top: 10px; padding-left: 10px">Chicago Weather Predictor: Current Forecast</h3>
         <hr>
         <p style="padding-left: 10px">Current Time in Chicago is {{ current_time }}</p>
+        <hr>
+        <div class="pure-g">
+            <div class="pure-u-1-2">
+                <a style="padding-left: 10px" href=predict_audit>
+                    <button class="pure-button pure-button-primary">Prediction Audit</button>
+                </a>
+                <a style="padding-left: 10px" href=model_info>
+                    <button class="pure-button pure-button-primary">Model Info</button>
+                </a>
+            </div>
+        </div>
 
         <hr>
-        <h3 style="padding-left: 10px">No Data is Available, Try Later</h3>
+        <h3 style="padding-left: 10px">No Data is Available, Please Try Later</h3>
         <hr>
 
-        <a style="padding-left: 10px" href=predict_audit>
-            <button class="pure-button pure-button-primary">Prediction Audit</button>
-        </a>
     </body>
 </html>

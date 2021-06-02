@@ -1,4 +1,3 @@
-# Entrypoint into the User Facing Webapp
 import sys
 import logging
 from logging.config import dictConfig
@@ -8,6 +7,7 @@ from flask import render_template
 import numpy as np
 import datetime
 import pytz
+import json
 sys.path.insert(1, '../')
 import config
 import libcommons.libcommons
@@ -111,5 +111,23 @@ def predict_audit():
 
 @app.route('/model_info')
 def model_info():
-    return {}
+    logging.info("Received /model_info request")
+    with open(libcommons.libcommons.get_model_info_file()) as json_file:
+        model_info_dict = json.load(json_file)
+        classification_info, regression_info = [model_info_dict['CLASSIFICATION'], model_info_dict['REGRESSION']]
+
+        regression_tbl, classification_tbl =  webapp_utils.format_model_info(regression_info, classification_info)
+
+        table_info = [
+            {'title': 'Regression Models',
+             'column_names': regression_tbl.columns.values,
+             'row_data': list(regression_tbl.values.tolist())},
+            {'title': 'Classification Models',
+             'column_names': classification_tbl.columns.values,
+             'row_data': list(classification_tbl.values.tolist())}
+        ]
+
+        return render_template("model_info.html", table_info=table_info)
+
+
 

@@ -6,25 +6,22 @@
               crossorigin="anonymous">
     </head>
     <body>
-        <h3 style="padding-top: 10px; padding-left: 10px" >Chicago Weather Predictor: Current Forecast</h3>
+        <h3 style="padding-top: 10px; padding-left: 10px">Chicago Weather Predictor: Underlying Model Information</h3>
         <hr>
         <div class="pure-g">
             <div class="pure-u-1-2">
+                <a style="padding-left: 10px" href=forecast>
+                    <button class="pure-button pure-button-primary">Forecast</button>
+                </a>
                 <a style="padding-left: 10px" href=predict_audit>
                     <button class="pure-button pure-button-primary">Prediction Audit</button>
-                </a>
-                <a style="padding-left: 10px" href=model_info>
-                    <button class="pure-button pure-button-primary">Model Info</button>
                 </a>
             </div>
         </div>
         <hr>
-        <p style="padding-left: 10px">Current Time in Chicago is {{ current_time }}</p>
-
         {% for table_info in table_info %}
-        <hr>
         <h4 style="padding-left: 10px">{{ table_info.title }}</h4>
-        <table  style="padding-left: 10px" class="pure-table pure-table-bordered">
+        <table valign="top" style="padding-left: 10px" class="pure-table pure-table-bordered">
         <thead>
             <tr>
                 {% for col in table_info.column_names %}
@@ -42,7 +39,7 @@
         </tbody>
         {% endfor %}
         </table>
-        {% endfor %}
         <hr>
+        {% endfor %}
     </body>
 </html>

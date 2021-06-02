@@ -330,3 +330,7 @@ def get_normalization_file(prediction_target):
 
 def get_model_file(prediction_target):
     return "{}/{}_{}h.h5".format(config.Config.MODELS_BASE_DIR, prediction_target.var, prediction_target.lookahead)
+
+
+def get_model_info_file():
+    return "{}/model_info.json".format(config.Config.MODELS_BASE_DIR)

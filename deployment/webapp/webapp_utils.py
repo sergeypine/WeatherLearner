@@ -60,7 +60,7 @@ def get_current_conditions_df():
                              format(last_reading['DATE']))
         return None
 
-    last_reading =  last_reading[['DATE', 'Temp', 'WindSpeed', '_is_clear', '_is_precip']]
+    last_reading = last_reading[['DATE', 'Temp', 'WindSpeed', '_is_clear', '_is_precip']]
     current_conditions_df = pd.DataFrame(columns=['DATE', 'VAR', 'PREDICTION'])
     current_conditions_df = \
         current_conditions_df.append(pd.Series([last_reading['DATE'], 'Temp', last_reading['Temp']]
@@ -118,7 +118,7 @@ def format_numeric_tbl(numeric_tbl):
         if col != 'DATE':
             numeric_tbl[col] = numeric_tbl[col].astype(int)
 
-    return  numeric_tbl
+    return numeric_tbl
 
 
 def reduce_audit_granurality(audit_df):
@@ -127,6 +127,52 @@ def reduce_audit_granurality(audit_df):
                     (audit_df['DATE'].dt.hour == 8) |
                     (audit_df['DATE'].dt.hour == 14) |
                     (audit_df['DATE'].dt.hour == 20)]
+
+
+def format_model_info(regression_info_list, classification_info_list):
+    regression_info_tbl = pd.DataFrame(columns=['Variable', 'Lookahead (hr)', 'Model Type', 'Root Mean Squared Error',
+                                                'Mean Absolute Percentage Error',
+                                                'Training Time', 'Training Data Time Range', 'Sample Count', 'Feature Count'])
+    classification_info_tbl = pd.DataFrame(columns=['Variable', 'Lookahead (hr)', 'Model Type', 'Recall', 'Precision',
+                                                    'Training Time', 'Training Time Range', 'Sample Count', 'Feature Count'])
+
+    for i in range(len(regression_info_list)):
+        regression_info = regression_info_list[i]
+        regression_info_row = [
+            regression_info['PREDICTION_VAR'],
+            regression_info['PREDICTION_LOOK_AHEAD'],
+            regression_info['MODEL_TYPE'],
+            regression_info['RMSE'],
+            "{}%".format(regression_info['MAPE']),
+            regression_info['TRAINED_TS'],
+            "{} - {}".format(regression_info['TRAIN_DATE_FROM'], regression_info['TRAIN_DATE_TO']),
+            regression_info['TRAINING_SAMPLES'],
+            regression_info['FEATURE_CNT']
+        ]
+        regression_info_tbl.loc[i] = regression_info_row
+
+    for i in range(len(classification_info_list)):
+        classification_info = classification_info_list[i]
+        classification_info_row = [
+            classification_info['PREDICTION_VAR'],
+            classification_info['PREDICTION_LOOK_AHEAD'],
+            classification_info['MODEL_TYPE'],
+            classification_info['RECALL'],
+            classification_info['PRECISION'],
+            classification_info['TRAINED_TS'],
+            "{} - {}".format(classification_info['TRAIN_DATE_FROM'], classification_info['TRAIN_DATE_TO']),
+            classification_info['TRAINING_SAMPLES'],
+            classification_info['FEATURE_CNT']
+        ]
+        classification_info_tbl.loc[i] = classification_info_row
+
+    classification_info_tbl.loc[classification_info_tbl['Variable'] == '_is_precip', 'Variable'] = 'Precipitation'
+    classification_info_tbl.loc[classification_info_tbl['Variable'] == '_is_clear', 'Variable'] = 'Clear Sky'
+    regression_info_tbl.loc[regression_info_tbl['Variable'] == 'Temp', 'Variable'] = 'Temperature'
+    regression_info_tbl.loc[regression_info_tbl['Variable'] == 'WindSpeed', 'Variable'] = 'Wind'
+
+    return regression_info_tbl.sort_values(by=['Variable', 'Lookahead (hr)']), \
+           classification_info_tbl.sort_values(by=['Variable', 'Lookahead (hr)'])
 
 
 def get_conditions(temp, _is_clear, _is_precip):
@@ -143,6 +189,7 @@ def get_conditions(temp, _is_clear, _is_precip):
         return 'Rain'
 
     return 'Winter Precipitation'
+
 
 # TODO - this is for testing not to break w.r.t. Flask Context. Explore a cleaner solution
 def get_logger():

@@ -15,9 +15,9 @@ sys.path.insert(1, '../')
 import libcommons.libcommons
 import config
 
-MAX_EPOCHS = 2
+MAX_EPOCHS = 5
 evaluations = {
-    'REGRESSION' : [],
+    'REGRESSION': [],
     'CLASSIFICATION': []
 }
 
@@ -32,8 +32,8 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
                                                        keep_all_dates=True)
     # Train/validation Split: 70% train, 30% validate
     train_end_idx = int(len(featureset) * 0.70)
-    from_ts = featureset.iloc[0]['DATE']
-    to_ts = featureset.iloc[train_end_idx-1]['DATE']
+    from_ts = (featureset['DATE'].astype(str))[0]
+    to_ts = featureset['DATE'].astype(str)[train_end_idx-1]
 
     # DATE is no longer of use to us
     featureset = featureset.drop(columns=['DATE'])
@@ -91,8 +91,9 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
     model.fit(wg.train, validation_data=wg.val, callbacks=[es_callback], epochs=MAX_EPOCHS)
 
     # Evaluate model and capture results
-    eval_entry = {'PREDICTION_TARGET': prediction_target, 'TRAINED_TS': pd.Timestamp(datetime.datetime.now()),
-                  'TRAIN_DATE_FROM': from_ts, 'TRAIN_DATE_TO': to_ts, 'TRAINING_SAMPLES': len(train_df)}
+    eval_entry = {'PREDICTION_VAR': prediction_target.var, 'PREDICTION_LOOK_AHEAD': prediction_target.lookahead,
+                  'TRAINED_TS': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'TRAIN_DATE_FROM': from_ts,
+                  'TRAIN_DATE_TO': to_ts, 'TRAINING_SAMPLES': len(train_df), 'MODEL_TYPE': model_to_use, 'FEATURE_CNT': input_cnt}
     if is_binary:
         recall, precision = evaluate_classification_model(model,
                                                           wg.val,
@@ -100,11 +101,13 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
         eval_entry['RECALL'] = recall
         eval_entry['PRECISION'] = precision
         evaluations['CLASSIFICATION'].append(eval_entry)
+        logging.info("Model for {} performance: RECALL={}, PRECISION={}".format(prediction_target, recall, precision))
     else:
-        rmse, mape = evaluate_classification_model(model, wg.val)
+        rmse, mape = evaluate_regression_model(model, wg.val)
         eval_entry['RMSE'] = rmse
         eval_entry['MAPE'] = mape
         evaluations['REGRESSION'].append(eval_entry)
+        logging.info("Model for {} performance: RMSE={}, MAPE={}%".format(prediction_target, rmse, mape))
 
     return model, {'STD': train_std.tolist(), 'MEAN': train_mean.tolist()}
 
@@ -281,13 +284,13 @@ def train_models(preprocessed_readings_dir):
                                         preprocessed_readings_dir)
         logging.info("END: train Model for  var = {}, lookahead = {}hr".format(
             prediction_target.var, prediction_target.lookahead))
-        print(evaluations)
 
-        # TODO - save evaluations as model_info
-        # model.save(libcommons.libcommons.get_model_file(prediction_target))
-        # with open(libcommons.libcommons.get_normalization_file(prediction_target), "w") as outfile:
-        #    json.dump(norm_dict, outfile)
+        model.save(libcommons.libcommons.get_model_file(prediction_target))
+        with open(libcommons.libcommons.get_normalization_file(prediction_target), "w") as outfile:
+            json.dump(norm_dict, outfile)
 
+    with open(libcommons.libcommons.get_model_info_file(), "w") as outfile:
+        json.dump(evaluations, outfile)
 
 def main(argv):
     print(argv)
