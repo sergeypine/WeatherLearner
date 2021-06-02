@@ -38,18 +38,18 @@ docker exec -it weather-predictor  /bin/bash
 To look at the web application logs:
 ```
 cd logs
-tail -f  tail -f webapp.log
+tail -f  webapp.log
 ```
 
 To look at the data and prediction service logs (this is where most of the real work is done):
 ```
 cd logs
-tail -f  tail -f data_service.log
+tail -f data_service.log
 ```
 
 ## Experiment
 
-- `../raw-data` directory contains training datasets from NOAA (to be manually ordered from https://www.ncdc.noaa.gov/cdo-web/datatools/lcd). Each file name must contain location with the following capitalization: `Des_Moines`. You can add/remove such files from that directory to train on different data 
+- `../raw-data` directory contains training datasets from NOAA (to be manually ordered from https://www.ncdc.noaa.gov/cdo-web/datatools/lcd). Each file must be in `.csv` format and the name must contain location with the following capitalization: `Des_Moines`. You can add/remove such files from that directory to train on different data 
 - you may not want to always run all stages of `build.py`. If so, edit flags such as `do_train` found in the beginning of the script
 - file `deployment/config.py` configures nearly everything about the application. You may want to take a look at:
     - `PREDICTION_TARGET_FEATURES` and `PREDICTION_TARGET_LOCATIONS` determine Features and Geographic Locations used to train each of the 16 models
