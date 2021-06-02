@@ -81,10 +81,10 @@ def create_model(prediction_target, model_to_use, preprocessed_readings_dir):
     # Configure early stopping so we don't learn the training data too well at the expense of test/validation data (
     # overfit) (use different criteria for Classification and Regression)
     if is_binary:
-        es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_recall', mode="max", patience=20, min_delta=0.0002,
+        es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_recall', mode="max", patience=10, min_delta=0.0002,
                                                        restore_best_weights=True)
     else:
-        es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_root_mean_squared_error', mode="min", patience=20,
+        es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_root_mean_squared_error', mode="min", patience=10,
                                                        min_delta=0.02, restore_best_weights=True)
 
     # NOTE: provide the Validation Dataset so that the Model does not check itself on Train
