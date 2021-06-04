@@ -92,3 +92,10 @@ For instance, if you've changed UI but don't want models retrained, run:
 ```
 python3 build.py build deploy-remote
 ```
+
+After the above completes, the application Web UI should be available via the following URL:
+
+http://ec5-55-555-555-555.<your_aws_region>.compute.amazonaws.com:5000/forecast
+
+where `ec5-55-555-555-555` needs to be substituted with your EC2 instance's Public IPv4 DNS and `your_aws_region` for the region in which you made the ECS task
+
