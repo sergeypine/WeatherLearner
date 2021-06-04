@@ -59,7 +59,7 @@ class Predictor():
         # Perform the prediction and record the result
         prediction = self.predict(prediction_target, model_tensor, model)
         prediction_time = base_time + datetime.timedelta(hours=prediction_target.lookahead)
-        logging.info("Target {}, prediction_time = {}; predicted value {}".format(
+        logging.debug("Target {}, prediction_time = {}; predicted value {}".format(
             prediction_target, prediction_time, prediction))
 
         # Add this prediction to Data Store

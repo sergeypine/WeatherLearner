@@ -5,6 +5,7 @@ import pytz
 import schedule
 import concurrent.futures
 import logging
+from traceback import format_exc
 
 sys.path.insert(1, '../')
 import config
@@ -27,15 +28,16 @@ def generate_forecast_job():
             retriever.retrieve_for_date_and_location(forecast_date, location)
 
     # (2) Generate Forecast
+    logging.info("Start Generating Forecast")
     for prediction_target in conf.ALL_PREDICTION_TARGETS:
-        logging.info("Forecasting for Prediction Target {}".format(prediction_target))
+        logging.debug("Forecasting for Prediction Target {}".format(prediction_target))
 
         # Predict based on the current time
         base_time = datetime.datetime.now(pytz.timezone(conf.TARGET_TIMEZONE))
         base_time = datetime.datetime(base_time.year, base_time.month, base_time.day, base_time.hour, 0, 0)
 
         predictor.predict_for_target_and_base_time(prediction_target, base_time)
-
+    logging.info("End Generating Forecast")
     logging.info("!!! END Forecast Job")
 
 
@@ -71,13 +73,16 @@ def backfill_predictions_job():
     missing_timestamps.sort()
 
     if len(missing_timestamps) > 0:
-        logging.info("Recent predictions for the following TS will be backfilled: {}".format(missing_timestamps))
+        logging.info("Recent predictions for the {} timestamps will be backfilled; range FROM {} TO {}".format(
+            len(missing_timestamps), missing_timestamps[0], missing_timestamps[-1]))
         for missing_ts in missing_timestamps:
+            logging.info("Start backfilling predictions for timestamp {}".format(missing_ts))
             prediction_targets = missing_timestamp_prediction_targets[missing_ts]
             for prediction_target in prediction_targets:
-                logging.info("Backfilling recent prediction for Target {}, base Timestamp {}".format(
+                logging.debug("Backfilling recent prediction for Target {}, base Timestamp {}".format(
                     prediction_target, missing_ts))
                 predictor.predict_for_target_and_base_time(prediction_target, missing_ts)
+            logging.info("End backfilling predictions for timestamp {}".format(missing_ts))
     else:
         logging.info("No recent predictions are missing")
 
@@ -112,21 +117,27 @@ def trim_old_data_job():
 
 def main():
     # Pre-execute the jobs
-    generate_forecast_job()
-    backfill_readings_job()
-    backfill_predictions_job()
-    update_prediction_audit_job()
-    trim_old_data_job()
+    try:
+        generate_forecast_job()
+        backfill_readings_job()
+        backfill_predictions_job()
+        update_prediction_audit_job()
+        trim_old_data_job()
+    except Exception:
+        logging.error(format_exc())
+
+    # Use this slightly modified scheduler to keep the script running on exceptions
+    safe_scheduler = data_service_utils.SafeScheduler()
 
     # Keep running the jobs on a schedule
-    schedule.every(conf.DATA_SERVICE_FORECAST_INTERVAL_MINUTES).minutes.do(generate_forecast_job)
+    safe_scheduler.every(conf.DATA_SERVICE_FORECAST_INTERVAL_MINUTES).minutes.do(generate_forecast_job)
 
-    schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_readings_job)
-    schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_predictions_job)
-    schedule.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_prediction_audit_job)
-    schedule.every(60 * 24).minutes.do(trim_old_data_job)
+    safe_scheduler.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_readings_job)
+    safe_scheduler.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(backfill_predictions_job)
+    safe_scheduler.every(conf.DATA_SERVICE_BACKFILL_INTERVAL_MINUTES).minutes.do(update_prediction_audit_job)
+    safe_scheduler.every(60 * 24).minutes.do(trim_old_data_job)
     while 1:
-        schedule.run_pending()
+        safe_scheduler.run_pending()
         time.sleep(1)
 
 

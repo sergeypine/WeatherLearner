@@ -36,6 +36,9 @@ class ReadingRetriever():
         location_code = self.conf.LOCATION_CODES[location]
 
         html = self.get_html_for_date(date, location_code)
+        if html is None: # Occasionally wunderground doesn't return a proper response
+            return None
+
         data = self.get_hourly_for_date_from_html(html, date)
 
         column_names = ['Time', 'Temp', 'DewPoint', 'Humidity', 'Wind', 'WindSpeed', 'WindGust', 'Pressure', 'Precip',
