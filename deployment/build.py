@@ -11,6 +11,7 @@ do_test = True
 do_build = True
 do_deploy_locally = True
 do_deploy_remotely = False
+do_force_redeploy = False
 
 
 def main(argv):
@@ -22,9 +23,11 @@ def main(argv):
         do_build = False
         do_deploy_locally = False
         do_deploy_remotely = False
+        do_force_redeploy = False
 
         if 'deploy-remote' in argv:
             do_deploy_remotely = True
+            do_force_redeploy = True
         if 'deploy-local' in argv:
             do_deploy_locally = True
         if 'train' in argv:
@@ -33,8 +36,12 @@ def main(argv):
         if 'build' in argv:
             do_build = True
 
+        if 'force-redeploy':
+            do_force_redeploy = True
+
     cur_dir = os.getcwd()
 
+    #  ==========  Train Models
     if do_train:
         RAW_DATA_DIR = '../../raw-data'
         PROCESSED_DATA_DIR = '../../processed-data'
@@ -71,7 +78,7 @@ def main(argv):
         os.chdir(cur_dir)
         subprocess.run(["docker", "build", "-t", "weather-predictor:latest", "."], check=True).check_returncode()
 
-    #  ========== Deploy
+    #  ========== Deploy Locally
     if do_deploy_locally:
         try:
             subprocess.run(["docker", "stop", "weather-predictor"], check=True).check_returncode()
@@ -86,6 +93,7 @@ def main(argv):
             ["docker", "run", "--name", "weather-predictor", "-v$PWD.", "-p", "5000:5000", "weather-predictor:latest"],
             close_fds=True)
 
+    # ========== Deploy Remotely
     if do_deploy_remotely:
         os.chdir(cur_dir)
         with open("../credentials_etc.json", 'r') as j:
@@ -113,6 +121,10 @@ def main(argv):
                                                                                       credentials_etc["AWS_REGION"])],
                        check=True).check_returncode()
 
+    if do_force_redeploy:
+
+        subprocess.run(["aws", "ecs", "update-service", "--cluster", "weather-predictor", "--service",
+                        "weather-predictor", "--force-new-deployment"], check=True).check_returncode()
 
 
 if __name__ == "__main__":

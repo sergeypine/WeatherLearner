@@ -72,10 +72,11 @@ The following is for deploying to AWS. It should not be too difficult to modify 
 - `credentials_etc.json` file (copy `credentials_etc_template.json` and set values accordingly)
 - The following resources exist in the AWS account (you'll need to create them manually :( ):  
   - `weather-predictor` repository  in AWS ECR that is initially empty
-  - ECS Cluster and Task assigned to it that is associated with a single EC2 instance of type `t2.medium`
+  - ECS Cluster and Task `weather-predictor` assigned to it that is associated with a single EC2 instance of type `t2.medium`
   - Task is set to run the Docker image in the ECR repository  
   - Task in Network Mode `Host`
   - Task Port is 5000
+  - Service `weather-predictor` is associated with the task  
   - EC2 instance _Inbound Rules_ must allow traffic on ports 80 (HTTP), 5000 (Custom TCP) and 22 (SSH)
 
 ### Command Line
