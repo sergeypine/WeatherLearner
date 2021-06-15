@@ -36,7 +36,7 @@ def main(argv):
         if 'build' in argv:
             do_build = True
 
-        if 'force-redeploy':
+        if 'force-redeploy' in argv:
             do_force_redeploy = True
 
     cur_dir = os.getcwd()

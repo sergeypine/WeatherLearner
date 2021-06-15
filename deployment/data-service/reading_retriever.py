@@ -102,20 +102,9 @@ class ReadingRetriever():
 
     @staticmethod
     def loc_data_to_noo_format(self, loc_data: pd.DataFrame):
-        # Drop "F" in temperatures
-        loc_data['Temp'] = loc_data['Temp'].str.replace(' F', '')
-        loc_data['DewPoint'] = loc_data['DewPoint'].str.replace(' F', '')
-
-        # Drop % in Humidty
-        loc_data['Humidity'] = loc_data['Humidity'].str.replace(' %', '')
-
-        # Drop mph in Windspeed and WindGust
-        loc_data['WindSpeed'] = loc_data['WindSpeed'].str.replace(' mph', '')
-        loc_data['WindGust'] = loc_data['WindGust'].str.replace(' mph', '')
-
-        # Drop in from Pressure and Precip
-        loc_data['Pressure'] = loc_data['Pressure'].str.replace(' in', '')
-        loc_data['Precipitation'] = loc_data['Precip'].str.replace(' in', '')
+        # Drop all the non-numeric suffix characters from numeric column values
+        for col in ['Temp', 'DewPoint', 'Humidity', 'WindSpeed', 'WindGust', 'Pressure', 'Precip']:
+            loc_data[col] = loc_data[col].str.rstrip("°%mphFin ")
 
         # Transform wind direction into 3 components: Northerly, Easterly and is_var
         loc_data['_wind_dir_sin'], loc_data['_wind_dir_cos'] = zip(
@@ -151,6 +140,7 @@ class ReadingRetriever():
         cleaned_df['_hour_cos'] = np.cos(2 * np.pi * cleaned_df['DATE'].dt.hour / 24)
 
         # Shed the unnecessary columns
+        cleaned_df['Precipitation'] = cleaned_df['Precip']
         cleaned_df = cleaned_df.drop(columns=['Condition', 'Wind', 'Precip'])
         return cleaned_df
 

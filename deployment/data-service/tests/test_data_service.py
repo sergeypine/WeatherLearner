@@ -50,6 +50,7 @@ def test_reading_retriever():
         assert target_row['_cloud_intensity'] == 4.0
         assert target_row['_is_clear'] == 0.0
         assert target_row['_is_precip'] == 0.0
+        assert target_row['Precipitation'] == 0.0
         print(df)
     finally:
         shutil.rmtree(config.Config.DATA_STORE_BASE_DIR)
