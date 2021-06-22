@@ -30,6 +30,10 @@ PREDICTION_TARGET_WINDSPEED_12H = PredictionTarget('WindSpeed', 12)
 PREDICTION_TARGET_WINDSPEED_18H = PredictionTarget('WindSpeed', 18)
 PREDICTION_TARGET_WINDSPEED_24H = PredictionTarget('WindSpeed', 24)
 
+PREDICTION_TARGET_IS_SNOW_6H = PredictionTarget('_is_snow', 6)
+PREDICTION_TARGET_IS_SNOW_12H = PredictionTarget('_is_snow', 12)
+PREDICTION_TARGET_IS_SNOW_18H = PredictionTarget('_is_snow', 18)
+
 
 class Config(object):
     # =========================================================
@@ -72,22 +76,15 @@ class Config(object):
     TARGET_TIMEZONE = 'America/Chicago'
     MAX_LOOK_BACK_HOURS = 24
     # =========================================================
-    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_CLEAR_6H, PREDICTION_TARGET_IS_CLEAR_12H,
-                              PREDICTION_TARGET_IS_CLEAR_18H, PREDICTION_TARGET_IS_CLEAR_24H,
+    ALL_PREDICTION_TARGETS = [PREDICTION_TARGET_IS_PRECIP_12H]
 
-                              PREDICTION_TARGET_IS_PRECIP_6H, PREDICTION_TARGET_IS_PRECIP_12H,
-                              PREDICTION_TARGET_IS_PRECIP_18H, PREDICTION_TARGET_IS_PRECIP_24H,
-
-                              PREDICTION_TARGET_TEMP_6H, PREDICTION_TARGET_TEMP_12H,
-                              PREDICTION_TARGET_TEMP_18H, PREDICTION_TARGET_TEMP_24H,
-
-                              PREDICTION_TARGET_WINDSPEED_6H, PREDICTION_TARGET_WINDSPEED_12H,
-                              PREDICTION_TARGET_WINDSPEED_18H, PREDICTION_TARGET_WINDSPEED_24H]
-
-    IS_CLEAR_FEATS = ['_day_cos', '_day_sin', 'Temp', 'Pressure', 'Humidity', 'WindSpeed', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_precip']
-    IS_PRECIP_FEATS = ['_day_cos', '_day_sin', '_hour_cos', '_hour_sin', 'Temp', 'Pressure', 'DewPoint', 'WindSpeed', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_clear']
     TEMP_FEATS = ['_day_cos', '_day_sin', '_hour_sin', '_hour_cos', 'DewPoint', 'Precipitation', 'Pressure', '_cloud_intensity', 'WindSpeed', '_wind_dir_sin', '_wind_dir_cos', '_is_thunder']
     WINDSPEED_FEATS = ['_day_cos', '_day_sin', '_hour_sin', '_hour_cos', 'Temp', 'DewPoint', 'Humidity', 'Pressure', 'Precipitation', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_is_thunder']
+
+    IS_CLEAR_FEATS = ['_day_cos', '_day_sin', 'Temp', 'Pressure', 'Humidity', 'WindSpeed', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_precip']
+
+    IS_PRECIP_FEATS = ['_day_cos', '_day_sin', '_hour_cos', '_hour_sin', 'Temp', 'Pressure', 'DewPoint', 'Humidity', 'WindSpeed', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_thunder', '_is_snow']
+    IS_SNOW_FEATS = ['_day_cos', '_day_sin', '_hour_cos', '_hour_sin', 'Temp', 'Pressure', 'DewPoint', 'Humidity', 'WindSpeed', 'WindGust', '_wind_dir_sin', '_wind_dir_cos', '_cloud_intensity', '_is_precip', '_is_thunder']
 
     PREDICTION_TARGET_FEATURES = {
         PREDICTION_TARGET_IS_CLEAR_6H: IS_CLEAR_FEATS,
@@ -109,6 +106,10 @@ class Config(object):
         PREDICTION_TARGET_WINDSPEED_12H: WINDSPEED_FEATS,
         PREDICTION_TARGET_WINDSPEED_18H: WINDSPEED_FEATS,
         PREDICTION_TARGET_WINDSPEED_24H: WINDSPEED_FEATS,
+
+        PREDICTION_TARGET_IS_SNOW_6H: IS_SNOW_FEATS,
+        PREDICTION_TARGET_IS_SNOW_12H: IS_SNOW_FEATS,
+        PREDICTION_TARGET_IS_SNOW_18H: IS_SNOW_FEATS,
     }
 
     LOCATIONS = ['Cedar_Rapids', 'Des_Moines', 'Madison', 'Rochester', 'Quincy', 'St_Louis', 'Green_Bay', 'Indianapolis', 'Lansing']
@@ -131,7 +132,11 @@ class Config(object):
         PREDICTION_TARGET_WINDSPEED_6H: LOCATIONS,
         PREDICTION_TARGET_WINDSPEED_12H: LOCATIONS,
         PREDICTION_TARGET_WINDSPEED_18H: LOCATIONS,
-        PREDICTION_TARGET_WINDSPEED_24H: LOCATIONS
+        PREDICTION_TARGET_WINDSPEED_24H: LOCATIONS,
+
+        PREDICTION_TARGET_IS_SNOW_6H: LOCATIONS,
+        PREDICTION_TARGET_IS_SNOW_12H: LOCATIONS,
+        PREDICTION_TARGET_IS_SNOW_18H: LOCATIONS
     }
 
     PREDICTION_TARGET_LOOKBACKS = {
@@ -141,7 +146,7 @@ class Config(object):
         PREDICTION_TARGET_IS_CLEAR_24H: 4,
 
         PREDICTION_TARGET_IS_PRECIP_6H: 4,
-        PREDICTION_TARGET_IS_PRECIP_12H: 24,
+        PREDICTION_TARGET_IS_PRECIP_12H: 36,
         PREDICTION_TARGET_IS_PRECIP_18H: 24,
         PREDICTION_TARGET_IS_PRECIP_24H: 24,
 
@@ -154,6 +159,10 @@ class Config(object):
         PREDICTION_TARGET_WINDSPEED_12H: 4,
         PREDICTION_TARGET_WINDSPEED_18H: 4,
         PREDICTION_TARGET_WINDSPEED_24H: 4,
+
+        PREDICTION_TARGET_IS_SNOW_6H: 36,
+        PREDICTION_TARGET_IS_SNOW_12H: 36,
+        PREDICTION_TARGET_IS_SNOW_18H: 36
     }
 
     # Aggregation Half-Intervals for the supported predicted variables
@@ -162,6 +171,8 @@ class Config(object):
         '_is_clear': 3,
         'Temp': 1,
         'WindSpeed': 2,
+
+        '_is_snow': 3,
     }
 
     PREDICTED_VARIABLE_AGG_RULES = {
@@ -169,27 +180,11 @@ class Config(object):
         '_is_clear': 'ALL',
         'Temp': 'AVG',
         'WindSpeed': 'AVG',
+
+        '_is_snow': 'ANY',
     }
     # =========================================================
 
     PREDICTION_TARGET_MODEL_TYPES = {
-        PREDICTION_TARGET_IS_CLEAR_6H: 'LINEAR',
-        PREDICTION_TARGET_IS_CLEAR_12H: 'NN',
-        PREDICTION_TARGET_IS_CLEAR_18H: 'NN',
-        PREDICTION_TARGET_IS_CLEAR_24H: 'NN',
-
-        PREDICTION_TARGET_IS_PRECIP_6H: 'DNN',
-        PREDICTION_TARGET_IS_PRECIP_12H: 'CNN',
-        PREDICTION_TARGET_IS_PRECIP_18H: 'CNN',
-        PREDICTION_TARGET_IS_PRECIP_24H: 'CNN',
-
-        PREDICTION_TARGET_TEMP_6H: 'DNN',
-        PREDICTION_TARGET_TEMP_12H: 'DNN',
-        PREDICTION_TARGET_TEMP_18H: 'DNN',
-        PREDICTION_TARGET_TEMP_24H: 'DNN',
-
-        PREDICTION_TARGET_WINDSPEED_6H: 'NN',
-        PREDICTION_TARGET_WINDSPEED_12H: 'NN',
-        PREDICTION_TARGET_WINDSPEED_18H: 'NN',
-        PREDICTION_TARGET_WINDSPEED_24H: 'DNN'
+        PREDICTION_TARGET_IS_PRECIP_12H: 'DCNN'
     }

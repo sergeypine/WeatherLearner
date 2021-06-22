@@ -313,7 +313,13 @@ class FeatureSetBuilder(object):
 
     @staticmethod
     def get_columns_to_normalize(featureset, prediction_target):
-        return featureset.columns.drop([prediction_target.var])
+        columns_to_drop = list(filter(lambda x: x.startswith('_is'), featureset.columns))
+        if prediction_target.var not in columns_to_drop:
+            columns_to_drop = columns_to_drop.append(prediction_target.var)
+        print("**NOT** NORMALIZING THE FOLLOWING COLUMNS")
+        print(columns_to_drop)
+        print("-------")
+        return featureset.columns.drop(columns_to_drop)
 
     @staticmethod
     def load_readings(location, dir_path):
