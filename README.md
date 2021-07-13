@@ -9,6 +9,14 @@ Provides a simple web UI to display data and model information.
 
 This is my Capstone Project for the University of San Diego Machine Learning Bootcamp program.
 
+## Detailed Information:
+
+[High Level Project Description](https://github.com/sergeypine/WeatherLearner/blob/main/doc/project_proposal.pdf)
+[Technical Architecture](https://github.com/sergeypine/WeatherLearner/blob/main/doc/Weather_Predictor_Architecture.pdf)
+[ML Modeling Info](https://github.com/sergeypine/WeatherLearner/blob/main/model-prototyping/model_experimenting.ipynb)
+[Dataset](https://github.com/sergeypine/WeatherLearner/tree/main/raw-data)
+[Data Exploration](https://github.com/sergeypine/WeatherLearner/blob/main/data-processing/data-wrangling.ipynb)
+
 ## How to run it:
 
 These instructions are for running the Docker container containing the application locally.
